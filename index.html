@@ -25,23 +25,23 @@
     color-scheme: light;
     --surface: #fcfcfb; --card: #ffffff; --border: #e4e3df;
     --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a897f;
-    --accent: #2a78d6; --err: #e34948;
+    --accent: #2a78d6; --accent-dim: #9dc2ec; --err: #e34948;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       color-scheme: dark;
       --surface: #1a1a19; --card: #232322; --border: #3a3936;
       --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #8a897f;
-      --accent: #3987e5; --err: #e66767;
+      --accent: #3987e5; --accent-dim: #2c517e; --err: #e66767;
     }
   }
   * { box-sizing: border-box; margin: 0; }
   body { background: var(--surface); color: var(--ink);
          font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px; }
-  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 20px; }
+  .wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 20px; }
   header h1 { font-size: 19px; font-weight: 650; }
   header .sub { color: var(--ink-3); font-size: 13px; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
   .tile { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
   .tile .label { font-size: 12px; font-weight: 600; letter-spacing: .04em;
                  text-transform: uppercase; color: var(--ink-3); }
@@ -58,12 +58,14 @@
   thead th { color: var(--ink-3); font-size: 12px; font-weight: 600;
              letter-spacing: .04em; text-transform: uppercase; }
   tbody tr:last-child td { border-bottom: none; }
-  tr.sla td { font-weight: 650; border-top: 2px solid var(--border); }
+  tr.sla td, tr.total td { font-weight: 650; border-top: 2px solid var(--border); }
   .num { color: var(--ink); }
   .sub { color: var(--ink-3); font-size: 12.5px; }
   .note { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
   footer { font-size: 12px; color: var(--ink-3); }
-  /* login */
+  #chart svg { width: 100%; height: auto; display: block; }
+  #chart .bar { cursor: pointer; }
+  #agentTitle { font-size: 13px; font-weight: 650; margin: 12px 0 4px; }
   #login { display: none; place-items: center; min-height: 70vh; }
   #login form { display: grid; gap: 10px; width: 260px; padding: 24px;
                 background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
@@ -89,18 +91,50 @@
     <h1>Petpooja Leads — Team Dashboard</h1>
     <div class="sub" id="asof"></div>
   </header>
+
+  <div class="card">
+    <h2>Calls per day — last 7 days</h2>
+    <div class="desc">Every outbound call by the team: predictive dialer + manual + click-to-call
+      (voicebot excluded). Tap a bar for that day's caller breakdown.</div>
+    <div id="chart"></div>
+    <div id="agentTitle"></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Caller</th><th>Outbound calls</th><th>Answered</th><th>Answer %</th></tr></thead>
+      <tbody id="agentRows"></tbody>
+    </table></div>
+    <div class="note" id="chartNote"></div>
+  </div>
+
   <div class="tiles">
     <div class="tile">
       <div class="label">Calls today</div>
       <div class="value" id="t-calls">–</div>
-      <div class="avg">5-working-day avg: <b id="a-calls">–</b></div>
+      <div class="avg" id="t-calls-src"></div>
     </div>
     <div class="tile">
-      <div class="label">Connected today</div>
+      <div class="label">Answered today</div>
       <div class="value" id="t-conn">–</div>
-      <div class="avg">5-working-day avg: <b id="a-conn">–</b></div>
+      <div class="avg" id="t-conn-sub"></div>
+    </div>
+    <div class="tile">
+      <div class="label">Demos arranged today</div>
+      <div class="value" id="t-demos">–</div>
+      <div class="avg" id="t-demos-sub"></div>
     </div>
   </div>
+
+  <div class="card">
+    <h2>Demos arranged per telecaller</h2>
+    <div class="desc">A demo counts when a lead first reaches a demo-or-later CRM stage;
+      it is credited to the caller of that lead's last connected call.</div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Telecaller</th><th>Today</th><th>Month to date</th></tr></thead>
+      <tbody id="demoRows"></tbody>
+    </table></div>
+    <div class="note">Tracking started 21 Aug 2026 — earlier demos are not counted.
+      “Unattributed” = the lead reached a demo stage with no connected call on record.</div>
+  </div>
+
   <div class="card">
     <h2>First-call speed — new leads in dialable hours</h2>
     <div class="desc">Leads created 10:30–19:00 IST, by time from creation to their first dial.
@@ -112,11 +146,11 @@
       </tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
-    <div class="note">Includes every dial whether it connected or not — this table tracks
-      <b>dialer efficiency</b> (how fast we reach out), not call outcomes. “Connected” in the
-      tiles above = the agent logged a conversation (connected / callback / not-interested /
-      irrelevant), not just a pickup.</div>
+    <div class="note">Counts predictive-dialer dials on our lead lists, connected or not —
+      this table tracks <b>dialer efficiency</b> on fresh leads, so its call counts are lower
+      than the all-outbound chart above.</div>
   </div>
+
   <footer id="foot"></footer>
 </div></div>
 
@@ -125,7 +159,6 @@ const API = "https://xuerxrbtofhxdwxglynr.supabase.co/functions/v1/team-dashboar
 const LS = "petpooja_dash_creds";
 
 function creds() {
-  // #key=... in the URL wins once, then persists in localStorage.
   const h = new URLSearchParams(location.hash.slice(1));
   if (h.get("key")) {
     localStorage.setItem(LS, JSON.stringify({ key: h.get("key") }));
@@ -160,26 +193,121 @@ const N = (x) => x == null ? null : Number(x);
 const pct = (n, of) => of ? `${Math.round((n / of) * 1000) / 10}%` : "–";
 const cell = (n, of) => `<span class="num">${n}</span> <span class="sub">(${pct(n, of)})</span>`;
 const avgCell = (p) => p == null ? `<span class="sub">–</span>` : `<span class="num">${p}%</span>`;
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const istDayLabel = (iso) =>
+  new Date(iso + "T00:00:00+05:30").toLocaleDateString("en-IN",
+    { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric" });
+
+let state = { days: [], agentsByDay: {}, selected: null };
+
+function buildDays(d) {
+  // Fill a continuous 7-day window ending today (IST) so no-dial days show as 0.
+  const todayIst = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const day = new Date(Date.parse(todayIst + "T00:00:00Z") - i * 86400000).toISOString().slice(0, 10);
+    days.push({ day, calls: 0, connected: 0 });
+  }
+  const byDay = Object.fromEntries(days.map((x) => [x.day, x]));
+  state.agentsByDay = {};
+  for (const r of d.agent_daily || []) {
+    if (byDay[r.day]) { byDay[r.day].calls += N(r.calls); byDay[r.day].connected += N(r.connected); }
+    (state.agentsByDay[r.day] = state.agentsByDay[r.day] || []).push(r);
+  }
+  state.days = days;
+  state.selected = days[6].day;
+}
+
+function drawChart() {
+  const W = 840, H = 190, PAD = 8, LBL = 34;
+  const max = Math.max(1, ...state.days.map((d) => d.calls));
+  const bw = Math.floor((W - PAD * 2) / 7);
+  const parts = [];
+  state.days.forEach((d, i) => {
+    const x = PAD + i * bw;
+    const h = Math.round((d.calls / max) * (H - LBL - 30));
+    const y = H - LBL - h;
+    const sel = d.day === state.selected;
+    const fill = sel ? "var(--accent)" : "var(--accent-dim)";
+    parts.push(`<g class="bar" data-day="${d.day}">
+      <rect x="${x + 6}" y="${PAD}" width="${bw - 12}" height="${H - LBL - PAD}" fill="transparent"></rect>
+      <rect x="${x + 6}" y="${y}" width="${bw - 12}" height="${Math.max(h, 2)}" rx="4" fill="${fill}"></rect>
+      <text x="${x + bw / 2}" y="${y - 6}" text-anchor="middle" font-size="13" font-weight="600"
+            fill="var(--ink)">${d.calls}</text>
+      <text x="${x + bw / 2}" y="${H - LBL + 18}" text-anchor="middle" font-size="12"
+            fill="${sel ? "var(--ink)" : "var(--ink-3)"}" font-weight="${sel ? 650 : 400}">${istDayLabel(d.day)}</text>
+      ${sel ? `<rect x="${x + 6}" y="${H - LBL + 24}" width="${bw - 12}" height="3" rx="1.5" fill="var(--accent)"></rect>` : ""}
+    </g>`);
+  });
+  document.getElementById("chart").innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calls per day, last 7 days">${parts.join("")}</svg>`;
+  document.querySelectorAll("#chart .bar").forEach((g) =>
+    g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); }));
+}
+
+function drawAgents() {
+  const rows = (state.agentsByDay[state.selected] || []).slice()
+    .sort((a, b) => N(b.calls) - N(a.calls));
+  const total = rows.reduce((s, r) => s + N(r.calls), 0);
+  const conn = rows.reduce((s, r) => s + N(r.connected), 0);
+  document.getElementById("agentTitle").textContent =
+    `Callers on ${istDayLabel(state.selected)} (${state.selected})`;
+  document.getElementById("agentRows").innerHTML = rows.length
+    ? rows.map((r) =>
+        `<tr><td>${esc(r.agent)}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
+        `<td>${pct(N(r.connected), N(r.calls))}</td></tr>`).join("") +
+      `<tr class="total"><td>Total (${rows.length} callers)</td><td>${total}</td><td>${conn}</td>` +
+      `<td>${pct(conn, total)}</td></tr>`
+    : `<tr><td colspan="4"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
+}
 
 function render(d) {
-  const t = d.today, y = d.yesterday, a = d.avg5;
   document.getElementById("asof").textContent =
     `Live as of ${new Date(d.generated_at).toLocaleString("en-IN",
       { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST · refreshes every 5 min`;
-  document.getElementById("t-calls").textContent = t.total_calls;
-  document.getElementById("t-conn").textContent = pct(t.connected_calls, t.total_calls);
-  document.getElementById("a-calls").textContent = a ? `${a.avg_calls}/day` : "–";
-  document.getElementById("a-conn").textContent = a && a.avg_conn_pct != null ? `${a.avg_conn_pct}%` : "–";
 
+  buildDays(d);
+  drawChart();
+  drawAgents();
+  const upd = d.agent_today_computed_at
+    ? `Today's bar last updated ${new Date(d.agent_today_computed_at).toLocaleTimeString("en-IN",
+        { timeZone: "Asia/Kolkata", timeStyle: "short" })} IST (refreshes ~10 min).`
+    : "Today's bar is still being computed — check back in a few minutes.";
+  document.getElementById("chartNote").textContent =
+    upd + " Source: full Acefone call records.";
+
+  // Tiles — from the CDR-based agent table; fall back to dialer-only counts
+  // until today's first rollup lands.
+  const today = state.days[6];
+  const haveCdr = (state.agentsByDay[today.day] || []).length > 0;
+  const calls = haveCdr ? today.calls : N(d.today.total_calls);
+  const conn = haveCdr ? today.connected : N(d.today.connected_calls);
+  document.getElementById("t-calls").textContent = calls;
+  document.getElementById("t-calls-src").textContent =
+    haveCdr ? "all outbound (incl. manual)" : "dialer calls only (CDR pending)";
+  document.getElementById("t-conn").textContent = pct(conn, calls);
+  document.getElementById("t-conn-sub").textContent = `${conn} of ${calls} picked up`;
+
+  const demos = d.demos || [];
+  const demosToday = demos.reduce((s, r) => s + N(r.today), 0);
+  const demosMtd = demos.reduce((s, r) => s + N(r.mtd), 0);
+  document.getElementById("t-demos").textContent = demosToday;
+  document.getElementById("t-demos-sub").textContent = `${demosMtd} this month`;
+  document.getElementById("demoRows").innerHTML = demos.length
+    ? demos.map((r) =>
+        `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td></tr>`).join("") +
+      `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td></tr>`
+    : `<tr><td colspan="3"><span class="sub">No demos recorded yet.</span></td></tr>`;
+
+  // First-call speed table.
+  const t = d.today, y = d.yesterday, a = d.avg5;
   document.getElementById("h-today").textContent = `Today (${t.in_window_leads} leads)`;
   document.getElementById("h-yd").textContent = y ? `Yesterday (${y.in_window_leads} leads)` : "Yesterday (–)";
   document.getElementById("h-avg").textContent = a ? `5-day avg (~${a.avg_in_window}/day)` : "5-day avg";
-
-  const w10t = t.called_1m + t.called_1m_10m;
-  const w10y = y ? y.called_1m + y.called_1m_10m : 0;
+  const w10t = N(t.called_1m) + N(t.called_1m_10m);
+  const w10y = y ? N(y.called_1m) + N(y.called_1m_10m) : 0;
   const w10a = a && a.avg_pct_1m != null && a.avg_pct_1m_10m != null
     ? Math.round((N(a.avg_pct_1m) + N(a.avg_pct_1m_10m)) * 10) / 10 : null;
-
   const rows = [
     ["≤ 1 minute",       t.called_1m,      y && y.called_1m,      N(a && a.avg_pct_1m)],
     ["1 – 10 minutes",   t.called_1m_10m,  y && y.called_1m_10m,  N(a && a.avg_pct_1m_10m)],
@@ -190,14 +318,14 @@ function render(d) {
   ];
   document.getElementById("rows").innerHTML = rows.map(([label, tv, yv, av, cls]) =>
     `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td>` +
-    `<td>${cell(tv, t.in_window_leads)}</td>` +
-    `<td>${yv == null ? "–" : cell(yv, y.in_window_leads)}</td>` +
+    `<td>${cell(N(tv), N(t.in_window_leads))}</td>` +
+    `<td>${yv == null ? "–" : cell(N(yv), N(y.in_window_leads))}</td>` +
     `<td>${avgCell(av)}</td></tr>`).join("");
 
   document.getElementById("foot").innerHTML =
-    `Historical rows are precomputed twice daily by the <code>team-dashboard-rollup</code> job; ` +
-    `only “Today” is live. 5-working-day average covers ${a ? a.day_list.join(", ") : "–"} ` +
-    `(days with ≥ ${d.working_day_min} calls; Sundays/holidays excluded).`;
+    `Historical rows are precomputed by the rollup jobs; “Today” is live. ` +
+    `5-day averages cover the last five weekdays (Mon–Fri) with ≥ ${d.working_day_min} dialer calls — ` +
+    `currently ${a ? a.day_list.join(", ") : "–"}. Saturdays, Sundays and holidays are excluded.`;
 }
 
 document.getElementById("loginForm").addEventListener("submit", (e) => {
