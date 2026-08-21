@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<!-- Team dashboard page. Hosted on GitHub Pages: Supabase serves NO web pages
+     on the shared *.supabase.co domain — the gateway force-rewrites HTML to
+     text/plain everywhere (edge functions AND storage, anti-phishing), so the
+     page lives off-platform and fetches the team-dashboard function's JSON
+     (see supabase/functions/team-dashboard/index.ts). Contains no secrets —
+     auth is enforced server-side by that function.
+
+     Deploy after edits: copy this file as index.html into the
+     github.com/shaivaldesai-cmd/team-dashboard repo and push (gh CLI is
+     authed on Shaival's machine); Pages redeploys automatically.
+
+     Team URL:
+       https://shaivaldesai-cmd.github.io/team-dashboard/
+     Sign in with dashboard.user / dashboard.pass (app_settings), or append
+     #key=<dashboard.secret> for a no-login link (the fragment never reaches
+     any server; it is stashed in localStorage on first load). -->
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Petpooja Leads — Team Dashboard</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb; --card: #ffffff; --border: #e4e3df;
+    --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a897f;
+    --accent: #2a78d6; --err: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19; --card: #232322; --border: #3a3936;
+      --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #8a897f;
+      --accent: #3987e5; --err: #e66767;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--surface); color: var(--ink);
+         font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px; }
+  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 20px; }
+  header h1 { font-size: 19px; font-weight: 650; }
+  header .sub { color: var(--ink-3); font-size: 13px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tile { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .tile .label { font-size: 12px; font-weight: 600; letter-spacing: .04em;
+                 text-transform: uppercase; color: var(--ink-3); }
+  .tile .value { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .tile .avg { font-size: 13px; color: var(--ink-2); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .card h2 { font-size: 15px; font-weight: 650; margin-bottom: 2px; }
+  .card .desc { font-size: 13px; color: var(--ink-2); margin-bottom: 12px; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 7px 12px; border-bottom: 1px solid var(--border);
+           white-space: nowrap; font-size: 14px; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--ink-3); font-size: 12px; font-weight: 600;
+             letter-spacing: .04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+  tr.sla td { font-weight: 650; border-top: 2px solid var(--border); }
+  .num { color: var(--ink); }
+  .sub { color: var(--ink-3); font-size: 12.5px; }
+  .note { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
+  footer { font-size: 12px; color: var(--ink-3); }
+  /* login */
+  #login { display: none; place-items: center; min-height: 70vh; }
+  #login form { display: grid; gap: 10px; width: 260px; padding: 24px;
+                background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
+  #login input { padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
+                 background: transparent; color: inherit; font: inherit; }
+  #login button { padding: 8px; border-radius: 6px; border: none; background: var(--accent);
+                  color: #fff; font-weight: 600; cursor: pointer; font: inherit; }
+  .err { color: var(--err); font-size: 13px; }
+  #app { display: none; }
+</style>
+</head><body>
+
+<div id="login"><form id="loginForm">
+  <b>Team Dashboard</b>
+  <div class="err" id="loginErr" hidden>Wrong username or password.</div>
+  <input id="u" placeholder="username" autocomplete="username">
+  <input id="p" type="password" placeholder="password" autocomplete="current-password">
+  <button type="submit">Open dashboard</button>
+</form></div>
+
+<div id="app"><div class="wrap">
+  <header>
+    <h1>Petpooja Leads — Team Dashboard</h1>
+    <div class="sub" id="asof"></div>
+  </header>
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">Calls today</div>
+      <div class="value" id="t-calls">–</div>
+      <div class="avg">5-working-day avg: <b id="a-calls">–</b></div>
+    </div>
+    <div class="tile">
+      <div class="label">Connected today</div>
+      <div class="value" id="t-conn">–</div>
+      <div class="avg">5-working-day avg: <b id="a-conn">–</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>First-call speed — new leads in dialable hours</h2>
+    <div class="desc">Leads created 10:30–19:00 IST, by time from creation to their first dial.
+      Target: every lead called within 10 minutes.</div>
+    <div class="tablewrap"><table>
+      <thead><tr>
+        <th>Time to first call</th><th id="h-today">Today</th>
+        <th id="h-yd">Yesterday</th><th id="h-avg">5-day avg</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="note">Includes every dial whether it connected or not — this table tracks
+      <b>dialer efficiency</b> (how fast we reach out), not call outcomes. “Connected” in the
+      tiles above = the agent logged a conversation (connected / callback / not-interested /
+      irrelevant), not just a pickup.</div>
+  </div>
+  <footer id="foot"></footer>
+</div></div>
+
+<script>
+const API = "https://xuerxrbtofhxdwxglynr.supabase.co/functions/v1/team-dashboard";
+const LS = "petpooja_dash_creds";
+
+function creds() {
+  // #key=... in the URL wins once, then persists in localStorage.
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("key")) {
+    localStorage.setItem(LS, JSON.stringify({ key: h.get("key") }));
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  try { return JSON.parse(localStorage.getItem(LS)) || null; } catch { return null; }
+}
+
+function show(id) {
+  document.getElementById("login").style.display = id === "login" ? "grid" : "none";
+  document.getElementById("app").style.display = id === "app" ? "block" : "none";
+}
+
+async function load(fromLogin) {
+  const c = creds();
+  if (!c) { show("login"); return; }
+  const q = c.key ? `key=${encodeURIComponent(c.key)}`
+                  : `user=${encodeURIComponent(c.user)}&pass=${encodeURIComponent(c.pass)}`;
+  let data = null;
+  try { data = await (await fetch(`${API}?${q}`)).json(); } catch { /* network */ }
+  if (!data || !data.ok) {
+    localStorage.removeItem(LS);
+    document.getElementById("loginErr").hidden = !fromLogin;
+    show("login");
+    return;
+  }
+  render(data);
+  show("app");
+}
+
+const N = (x) => x == null ? null : Number(x);
+const pct = (n, of) => of ? `${Math.round((n / of) * 1000) / 10}%` : "–";
+const cell = (n, of) => `<span class="num">${n}</span> <span class="sub">(${pct(n, of)})</span>`;
+const avgCell = (p) => p == null ? `<span class="sub">–</span>` : `<span class="num">${p}%</span>`;
+
+function render(d) {
+  const t = d.today, y = d.yesterday, a = d.avg5;
+  document.getElementById("asof").textContent =
+    `Live as of ${new Date(d.generated_at).toLocaleString("en-IN",
+      { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST · refreshes every 5 min`;
+  document.getElementById("t-calls").textContent = t.total_calls;
+  document.getElementById("t-conn").textContent = pct(t.connected_calls, t.total_calls);
+  document.getElementById("a-calls").textContent = a ? `${a.avg_calls}/day` : "–";
+  document.getElementById("a-conn").textContent = a && a.avg_conn_pct != null ? `${a.avg_conn_pct}%` : "–";
+
+  document.getElementById("h-today").textContent = `Today (${t.in_window_leads} leads)`;
+  document.getElementById("h-yd").textContent = y ? `Yesterday (${y.in_window_leads} leads)` : "Yesterday (–)";
+  document.getElementById("h-avg").textContent = a ? `5-day avg (~${a.avg_in_window}/day)` : "5-day avg";
+
+  const w10t = t.called_1m + t.called_1m_10m;
+  const w10y = y ? y.called_1m + y.called_1m_10m : 0;
+  const w10a = a && a.avg_pct_1m != null && a.avg_pct_1m_10m != null
+    ? Math.round((N(a.avg_pct_1m) + N(a.avg_pct_1m_10m)) * 10) / 10 : null;
+
+  const rows = [
+    ["≤ 1 minute",       t.called_1m,      y && y.called_1m,      N(a && a.avg_pct_1m)],
+    ["1 – 10 minutes",   t.called_1m_10m,  y && y.called_1m_10m,  N(a && a.avg_pct_1m_10m)],
+    ["10 min – 1 hour",  t.called_10m_1h,  y && y.called_10m_1h,  N(a && a.avg_pct_10m_1h)],
+    ["1 hour +",         t.called_over_1h, y && y.called_over_1h, N(a && a.avg_pct_over_1h)],
+    ["Not yet called",   t.uncalled,       y && y.uncalled,       N(a && a.avg_pct_uncalled)],
+    ["Called within 10 min", w10t,          y ? w10y : null,       w10a, "sla"],
+  ];
+  document.getElementById("rows").innerHTML = rows.map(([label, tv, yv, av, cls]) =>
+    `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td>` +
+    `<td>${cell(tv, t.in_window_leads)}</td>` +
+    `<td>${yv == null ? "–" : cell(yv, y.in_window_leads)}</td>` +
+    `<td>${avgCell(av)}</td></tr>`).join("");
+
+  document.getElementById("foot").innerHTML =
+    `Historical rows are precomputed twice daily by the <code>team-dashboard-rollup</code> job; ` +
+    `only “Today” is live. 5-working-day average covers ${a ? a.day_list.join(", ") : "–"} ` +
+    `(days with ≥ ${d.working_day_min} calls; Sundays/holidays excluded).`;
+}
+
+document.getElementById("loginForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  localStorage.setItem(LS, JSON.stringify({
+    user: document.getElementById("u").value.trim(),
+    pass: document.getElementById("p").value,
+  }));
+  load(true);
+});
+
+load(false);
+setInterval(() => load(false), 5 * 60 * 1000);
+</script>
+</body></html>
