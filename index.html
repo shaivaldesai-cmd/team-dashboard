@@ -136,6 +136,18 @@
   </div>
 
   <div class="card">
+    <h2>Missed inbound calls — are we calling back?</h2>
+    <div class="desc">Numbers that called us and got no answer, and whether we dialed them back
+      (same or next day) and reached them.</div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Day</th><th>Missed numbers</th><th>Called back</th><th>Callback answered</th></tr></thead>
+      <tbody id="cbRows"></tbody>
+    </table></div>
+    <div class="note">A number counts as “called back” when any outbound dial went to it the
+      same or next day. Same-day ordering is approximate.</div>
+  </div>
+
+  <div class="card">
     <h2>First-call speed — new leads in dialable hours</h2>
     <div class="desc">Leads created 10:30–19:00 IST, by time from creation to their first dial.
       Target: every lead called within 10 minutes.</div>
@@ -146,9 +158,9 @@
       </tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
-    <div class="note">Counts predictive-dialer dials on our lead lists, connected or not —
-      this table tracks <b>dialer efficiency</b> on fresh leads, so its call counts are lower
-      than the all-outbound chart above.</div>
+    <div class="note">Counts every outbound dial to the lead — predictive dialer or manual,
+      connected or not (inbound calls never count as our outreach). Tracks
+      <b>outreach speed</b> on fresh leads.</div>
   </div>
 
   <footer id="foot"></footer>
@@ -298,6 +310,15 @@ function render(d) {
         `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td></tr>`).join("") +
       `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td></tr>`
     : `<tr><td colspan="3"><span class="sub">No demos recorded yet.</span></td></tr>`;
+
+  // Missed-inbound callback tracking.
+  const cbs = d.callbacks || [];
+  document.getElementById("cbRows").innerHTML = cbs.length
+    ? cbs.map((r) =>
+        `<tr><td>${istDayLabel(r.day)}</td><td>${N(r.missed_numbers)}</td>` +
+        `<td>${cell(N(r.called_back), N(r.missed_numbers))}</td>` +
+        `<td>${cell(N(r.callback_answered), N(r.missed_numbers))}</td></tr>`).join("")
+    : `<tr><td colspan="4"><span class="sub">No missed inbound calls recorded.</span></td></tr>`;
 
   // First-call speed table.
   const t = d.today, y = d.yesterday, a = d.avg5;
