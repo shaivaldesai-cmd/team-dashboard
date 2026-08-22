@@ -226,6 +226,17 @@ function buildDays(d) {
     if (byDay[r.day]) { byDay[r.day].calls += N(r.calls); byDay[r.day].connected += N(r.connected); }
     (state.agentsByDay[r.day] = state.agentsByDay[r.day] || []).push(r);
   }
+  // Today comes LIVE from the webhook stream (merged with the CDR import),
+  // overriding the periodic rollup row.
+  const todayKey = days[6].day;
+  if ((d.live_today || []).length) {
+    byDay[todayKey].calls = 0; byDay[todayKey].connected = 0;
+    state.agentsByDay[todayKey] = d.live_today;
+    for (const r of d.live_today) {
+      byDay[todayKey].calls += N(r.calls);
+      byDay[todayKey].connected += N(r.connected);
+    }
+  }
   state.days = days;
   state.selected = days[6].day;
 }
@@ -281,12 +292,10 @@ function render(d) {
   buildDays(d);
   drawChart();
   drawAgents();
-  const upd = d.agent_today_computed_at
-    ? `Today's bar last updated ${new Date(d.agent_today_computed_at).toLocaleTimeString("en-IN",
-        { timeZone: "Asia/Kolkata", timeStyle: "short" })} IST (refreshes ~10 min).`
-    : "Today's bar is still being computed — check back in a few minutes.";
   document.getElementById("chartNote").textContent =
-    upd + " Source: full Acefone call records.";
+    (d.live_today || []).length
+      ? "Today is LIVE from the call webhook stream (manual Agent-service dials may lag a few minutes). Source: Acefone call records."
+      : "Today's data is still being computed — check back in a few minutes.";
 
   // Tiles — from the CDR-based agent table; fall back to dialer-only counts
   // until today's first rollup lands.
