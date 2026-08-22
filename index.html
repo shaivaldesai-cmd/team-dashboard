@@ -94,13 +94,14 @@
 
   <div class="card">
     <h2>Calls per day — last 7 days</h2>
-    <div class="desc">Every call the team handled: all outbound (dialer + manual + click-to-call)
-      plus answered inbound; voicebot excluded. The solid inner bar is the connected portion.
+    <div class="desc">Calls a person handled: outbound with an agent on the line (dialer-connected,
+      manual, click-to-call) plus answered inbound. Auto-dialer legs nobody answered (no agent
+      involved) and voicebot are excluded. The solid inner bar is the connected portion.
       Tap a bar for that day's caller breakdown.</div>
     <div id="chart"></div>
     <div id="agentTitle"></div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th><th>Avg talk</th></tr></thead>
+      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th><th>Talk time</th></tr></thead>
       <tbody id="agentRows"></tbody>
     </table></div>
     <div class="note" id="chartNote"></div>
@@ -274,10 +275,11 @@ function drawChart() {
     g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); }));
 }
 
-function fmtTalk(talkSeconds, connected) {
-  if (!connected) return "–";
-  const s = Math.round(N(talkSeconds) / connected);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+function fmtTalkTotal(talkSeconds) {
+  const s = N(talkSeconds) || 0;
+  if (!s) return "–";
+  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
 }
 
 function drawAgents() {
@@ -288,16 +290,13 @@ function drawAgents() {
   const talk = rows.reduce((s, r) => s + N(r.talk_seconds || 0), 0);
   document.getElementById("agentTitle").textContent =
     `Callers on ${istDayLabel(state.selected)} (${state.selected})`;
-  // "Unknown" = predictive-dialer legs the customer never answered — the
-  // dialer only attaches an agent on pickup, so no name exists for these.
-  const callerName = (a) => a === "Unknown" ? "Auto-dialer (no answer, no agent)" : a;
   document.getElementById("agentRows").innerHTML = rows.length
     ? rows.map((r) =>
-        `<tr><td>${esc(callerName(r.agent))}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
+        `<tr><td>${esc(r.agent)}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
         `<td>${pct(N(r.connected), N(r.calls))}</td>` +
-        `<td>${fmtTalk(r.talk_seconds || 0, N(r.connected))}</td></tr>`).join("") +
+        `<td>${fmtTalkTotal(r.talk_seconds || 0)}</td></tr>`).join("") +
       `<tr class="total"><td>Total (${rows.length} callers)</td><td>${total}</td><td>${conn}</td>` +
-      `<td>${pct(conn, total)}</td><td>${fmtTalk(talk, conn)}</td></tr>`
+      `<td>${pct(conn, total)}</td><td>${fmtTalkTotal(talk)}</td></tr>`
     : `<tr><td colspan="5"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
 }
 
