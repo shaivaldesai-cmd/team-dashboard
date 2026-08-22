@@ -288,9 +288,12 @@ function drawAgents() {
   const talk = rows.reduce((s, r) => s + N(r.talk_seconds || 0), 0);
   document.getElementById("agentTitle").textContent =
     `Callers on ${istDayLabel(state.selected)} (${state.selected})`;
+  // "Unknown" = predictive-dialer legs the customer never answered — the
+  // dialer only attaches an agent on pickup, so no name exists for these.
+  const callerName = (a) => a === "Unknown" ? "Auto-dialer (no answer, no agent)" : a;
   document.getElementById("agentRows").innerHTML = rows.length
     ? rows.map((r) =>
-        `<tr><td>${esc(r.agent)}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
+        `<tr><td>${esc(callerName(r.agent))}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
         `<td>${pct(N(r.connected), N(r.calls))}</td>` +
         `<td>${fmtTalk(r.talk_seconds || 0, N(r.connected))}</td></tr>`).join("") +
       `<tr class="total"><td>Total (${rows.length} callers)</td><td>${total}</td><td>${conn}</td>` +
