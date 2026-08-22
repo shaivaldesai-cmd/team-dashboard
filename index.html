@@ -100,7 +100,7 @@
     <div id="chart"></div>
     <div id="agentTitle"></div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th></tr></thead>
+      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th><th>Avg talk</th></tr></thead>
       <tbody id="agentRows"></tbody>
     </table></div>
     <div class="note" id="chartNote"></div>
@@ -274,20 +274,28 @@ function drawChart() {
     g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); }));
 }
 
+function fmtTalk(talkSeconds, connected) {
+  if (!connected) return "–";
+  const s = Math.round(N(talkSeconds) / connected);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 function drawAgents() {
   const rows = (state.agentsByDay[state.selected] || []).slice()
     .sort((a, b) => N(b.calls) - N(a.calls));
   const total = rows.reduce((s, r) => s + N(r.calls), 0);
   const conn = rows.reduce((s, r) => s + N(r.connected), 0);
+  const talk = rows.reduce((s, r) => s + N(r.talk_seconds || 0), 0);
   document.getElementById("agentTitle").textContent =
     `Callers on ${istDayLabel(state.selected)} (${state.selected})`;
   document.getElementById("agentRows").innerHTML = rows.length
     ? rows.map((r) =>
         `<tr><td>${esc(r.agent)}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
-        `<td>${pct(N(r.connected), N(r.calls))}</td></tr>`).join("") +
+        `<td>${pct(N(r.connected), N(r.calls))}</td>` +
+        `<td>${fmtTalk(r.talk_seconds || 0, N(r.connected))}</td></tr>`).join("") +
       `<tr class="total"><td>Total (${rows.length} callers)</td><td>${total}</td><td>${conn}</td>` +
-      `<td>${pct(conn, total)}</td></tr>`
-    : `<tr><td colspan="4"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
+      `<td>${pct(conn, total)}</td><td>${fmtTalk(talk, conn)}</td></tr>`
+    : `<tr><td colspan="5"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
 }
 
 function render(d) {
