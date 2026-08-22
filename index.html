@@ -94,12 +94,13 @@
 
   <div class="card">
     <h2>Calls per day — last 7 days</h2>
-    <div class="desc">Every outbound call by the team: predictive dialer + manual + click-to-call
-      (voicebot excluded). Tap a bar for that day's caller breakdown.</div>
+    <div class="desc">Every call the team handled: all outbound (dialer + manual + click-to-call)
+      plus answered inbound; voicebot excluded. The solid inner bar is the connected portion.
+      Tap a bar for that day's caller breakdown.</div>
     <div id="chart"></div>
     <div id="agentTitle"></div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Caller</th><th>Outbound calls</th><th>Answered</th><th>Answer %</th></tr></thead>
+      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th></tr></thead>
       <tbody id="agentRows"></tbody>
     </table></div>
     <div class="note" id="chartNote"></div>
@@ -242,28 +243,33 @@ function buildDays(d) {
 }
 
 function drawChart() {
-  const W = 840, H = 190, PAD = 8, LBL = 34;
+  const W = 840, H = 205, PAD = 8, LBL = 34, TOP = 38;
   const max = Math.max(1, ...state.days.map((d) => d.calls));
   const bw = Math.floor((W - PAD * 2) / 7);
   const parts = [];
   state.days.forEach((d, i) => {
     const x = PAD + i * bw;
-    const h = Math.round((d.calls / max) * (H - LBL - 30));
+    const h = Math.round((d.calls / max) * (H - LBL - TOP));
+    const hc = Math.round((d.connected / max) * (H - LBL - TOP));
     const y = H - LBL - h;
+    const yc = H - LBL - hc;
     const sel = d.day === state.selected;
-    const fill = sel ? "var(--accent)" : "var(--accent-dim)";
+    const connPct = d.calls ? Math.round((d.connected / d.calls) * 100) : 0;
     parts.push(`<g class="bar" data-day="${d.day}">
       <rect x="${x + 6}" y="${PAD}" width="${bw - 12}" height="${H - LBL - PAD}" fill="transparent"></rect>
-      <rect x="${x + 6}" y="${y}" width="${bw - 12}" height="${Math.max(h, 2)}" rx="4" fill="${fill}"></rect>
-      <text x="${x + bw / 2}" y="${y - 6}" text-anchor="middle" font-size="13" font-weight="600"
+      <rect x="${x + 6}" y="${y}" width="${bw - 12}" height="${Math.max(h, 2)}" rx="4" fill="var(--accent-dim)"></rect>
+      <rect x="${x + 6}" y="${yc}" width="${bw - 12}" height="${Math.max(hc, 2)}" rx="4" fill="var(--accent)"></rect>
+      <text x="${x + bw / 2}" y="${y - 20}" text-anchor="middle" font-size="13" font-weight="600"
             fill="var(--ink)">${d.calls}</text>
+      <text x="${x + bw / 2}" y="${y - 6}" text-anchor="middle" font-size="11"
+            fill="var(--ink-3)">${d.calls ? `${d.connected} conn (${connPct}%)` : ""}</text>
       <text x="${x + bw / 2}" y="${H - LBL + 18}" text-anchor="middle" font-size="12"
             fill="${sel ? "var(--ink)" : "var(--ink-3)"}" font-weight="${sel ? 650 : 400}">${istDayLabel(d.day)}</text>
       ${sel ? `<rect x="${x + 6}" y="${H - LBL + 24}" width="${bw - 12}" height="3" rx="1.5" fill="var(--accent)"></rect>` : ""}
     </g>`);
   });
   document.getElementById("chart").innerHTML =
-    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calls per day, last 7 days">${parts.join("")}</svg>`;
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calls per day with connected portion, last 7 days">${parts.join("")}</svg>`;
   document.querySelectorAll("#chart .bar").forEach((g) =>
     g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); }));
 }
