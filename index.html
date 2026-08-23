@@ -101,7 +101,7 @@
     <div id="chart"></div>
     <div id="agentTitle"></div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th><th>Talk time</th></tr></thead>
+      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th><th>Talk time</th><th>Ring wait</th></tr></thead>
       <tbody id="agentRows"></tbody>
     </table></div>
     <div class="note" id="chartNote"></div>
@@ -130,11 +130,13 @@
     <div class="desc">A demo counts when a lead first reaches a demo-or-later CRM stage;
       it is credited to the caller of that lead's last connected call.</div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Telecaller</th><th>Today</th><th>Month to date</th></tr></thead>
+      <thead><tr><th>Telecaller</th><th>Today</th><th>Month to date</th><th>Connects per demo</th></tr></thead>
       <tbody id="demoRows"></tbody>
     </table></div>
-    <div class="note">Tracking started 21 Aug 2026 — earlier demos are not counted.
-      “Unattributed” = the lead reached a demo stage with no connected call on record.</div>
+    <div class="note">A demo counts when a lead first reaches a demo-or-later CRM stage, credited via
+      the caller's last answered call. “Connects per demo” = MTD connected calls ÷ MTD demos —
+      lower is more efficient (call data since 11 Aug). “Unattributed” = no call on record
+      (field sales, WhatsApp, office bookings).</div>
   </div>
 
   <div class="card">
@@ -288,16 +290,18 @@ function drawAgents() {
   const total = rows.reduce((s, r) => s + N(r.calls), 0);
   const conn = rows.reduce((s, r) => s + N(r.connected), 0);
   const talk = rows.reduce((s, r) => s + N(r.talk_seconds || 0), 0);
+  const ring = rows.reduce((s, r) => s + N(r.ring_seconds || 0), 0);
   document.getElementById("agentTitle").textContent =
     `Callers on ${istDayLabel(state.selected)} (${state.selected})`;
   document.getElementById("agentRows").innerHTML = rows.length
     ? rows.map((r) =>
         `<tr><td>${esc(r.agent)}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
         `<td>${pct(N(r.connected), N(r.calls))}</td>` +
-        `<td>${fmtTalkTotal(r.talk_seconds || 0)}</td></tr>`).join("") +
+        `<td>${fmtTalkTotal(r.talk_seconds || 0)}</td>` +
+        `<td>${fmtTalkTotal(r.ring_seconds || 0)}</td></tr>`).join("") +
       `<tr class="total"><td>Total (${rows.length} callers)</td><td>${total}</td><td>${conn}</td>` +
-      `<td>${pct(conn, total)}</td><td>${fmtTalkTotal(talk)}</td></tr>`
-    : `<tr><td colspan="5"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
+      `<td>${pct(conn, total)}</td><td>${fmtTalkTotal(talk)}</td><td>${fmtTalkTotal(ring)}</td></tr>`
+    : `<tr><td colspan="6"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
 }
 
 function render(d) {
@@ -330,11 +334,15 @@ function render(d) {
   const demosMtd = demos.reduce((s, r) => s + N(r.mtd), 0);
   document.getElementById("t-demos").textContent = demosToday;
   document.getElementById("t-demos-sub").textContent = `${demosMtd} this month`;
+  const cpd = (r) => {
+    const c = N(r.connected_mtd || 0), m = N(r.mtd);
+    return (r.agent === "Unattributed" || !c || !m) ? "–" : (Math.round((c / m) * 10) / 10).toString();
+  };
   document.getElementById("demoRows").innerHTML = demos.length
     ? demos.map((r) =>
-        `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td></tr>`).join("") +
-      `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td></tr>`
-    : `<tr><td colspan="3"><span class="sub">No demos recorded yet.</span></td></tr>`;
+        `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td><td>${cpd(r)}</td></tr>`).join("") +
+      `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td><td></td></tr>`
+    : `<tr><td colspan="4"><span class="sub">No demos recorded yet.</span></td></tr>`;
 
   // Missed-inbound callback tracking.
   const cbs = d.callbacks || [];
