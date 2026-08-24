@@ -130,12 +130,12 @@
     <div class="desc">A demo counts when a lead first reaches a demo-or-later CRM stage;
       it is credited to the caller of that lead's last connected call.</div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Telecaller</th><th>Today</th><th>Month to date</th><th>Connects per demo</th></tr></thead>
+      <thead><tr><th>Telecaller</th><th>Today</th><th>Month to date</th><th>Demo conversion</th></tr></thead>
       <tbody id="demoRows"></tbody>
     </table></div>
     <div class="note">A demo counts when a lead first reaches a demo-or-later CRM stage, credited via
-      the caller's last answered call. “Connects per demo” = MTD connected calls ÷ MTD demos —
-      lower is more efficient (call data since 11 Aug). “Unattributed” = no call on record
+      the caller's last answered call. “Demo conversion” = MTD demos ÷ MTD connected calls —
+      higher is more efficient (call data since 11 Aug). “Unattributed” = no call on record
       (field sales, WhatsApp, office bookings).</div>
   </div>
 
@@ -334,9 +334,10 @@ function render(d) {
   const demosMtd = demos.reduce((s, r) => s + N(r.mtd), 0);
   document.getElementById("t-demos").textContent = demosToday;
   document.getElementById("t-demos-sub").textContent = `${demosMtd} this month`;
+  // % of MTD connected calls that produced a demo — higher is better.
   const cpd = (r) => {
     const c = N(r.connected_mtd || 0), m = N(r.mtd);
-    return (r.agent === "Unattributed" || !c || !m) ? "–" : (Math.round((c / m) * 10) / 10).toString();
+    return (r.agent === "Unattributed" || !c || !m) ? "–" : `${Math.round((m / c) * 1000) / 10}%`;
   };
   document.getElementById("demoRows").innerHTML = demos.length
     ? demos.map((r) =>
