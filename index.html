@@ -314,7 +314,7 @@ function render(d) {
   drawAgents();
   document.getElementById("chartNote").textContent =
     (d.live_today || []).length
-      ? "Today is LIVE from the call webhook stream (manual Agent-service dials may lag a few minutes). Source: Acefone call records."
+      ? "Today is LIVE from the call webhook stream (all call types — dialer, manual and click-to-call — report in real time). Source: Acefone call records."
       : "Today's data is still being computed — check back in a few minutes.";
 
   // Tiles — from the CDR-based agent table; fall back to dialer-only counts
