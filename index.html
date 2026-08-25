@@ -127,16 +127,17 @@
 
   <div class="card">
     <h2>Demos arranged per telecaller</h2>
-    <div class="desc">A demo counts when a lead first reaches a demo-or-later CRM stage;
-      it is credited from the CRM’s “Demo Assigned By” field.</div>
+    <div class="desc">Arranged = lead first reached a demo-or-later CRM stage this month; Done = that
+      demo actually happened (CRM demo-done date, or the deal moved to Demo Shown or beyond).
+      Credited from the CRM’s “Demo Assigned By” field.</div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Telecaller</th><th>Today</th><th>Month to date</th><th>Demo conversion</th></tr></thead>
+      <thead><tr><th>Telecaller</th><th>Today</th><th>Arranged MTD</th><th>Done MTD</th><th>Done %</th><th>Demo conversion</th></tr></thead>
       <tbody id="demoRows"></tbody>
     </table></div>
-    <div class="note">A demo counts when a lead first reaches a demo-or-later CRM stage, credited from
-      the CRM’s “Demo Assigned By” field. “Demo conversion” = MTD demos ÷ MTD connected calls —
-      higher is more efficient (call data since 11 Aug). “Demo team / other” = arranged by
-      non-telecaller staff; “Unattributed” = field left blank in the CRM.</div>
+    <div class="note">“Done %” = share of this month’s arranged demos that actually happened.
+      “Demo conversion” = MTD arranged demos ÷ MTD connected calls — higher is more efficient
+      (call data since 11 Aug). “Demo team / other” = arranged by non-telecaller staff;
+      “Unattributed” = Demo Assigned By left blank in the CRM.</div>
   </div>
 
   <div class="card">
@@ -333,17 +334,24 @@ function render(d) {
   const demosToday = demos.reduce((s, r) => s + N(r.today), 0);
   const demosMtd = demos.reduce((s, r) => s + N(r.mtd), 0);
   document.getElementById("t-demos").textContent = demosToday;
-  document.getElementById("t-demos-sub").textContent = `${demosMtd} this month`;
+  document.getElementById("t-demos-sub").textContent =
+    `${demosMtd} arranged · ${demos.reduce((s, r) => s + N(r.done_mtd || 0), 0)} done this month`;
   // % of MTD connected calls that produced a demo — higher is better.
   const cpd = (r) => {
     const c = N(r.connected_mtd || 0), m = N(r.mtd);
     return (r.agent === "Unattributed" || !c || !m) ? "–" : `${Math.round((m / c) * 1000) / 10}%`;
   };
+  const donePct = (r) => {
+    const m = N(r.mtd), d = N(r.done_mtd || 0);
+    return m ? `${Math.round((d / m) * 1000) / 10}%` : "–";
+  };
+  const demosDone = demos.reduce((s, r) => s + N(r.done_mtd || 0), 0);
+  const totDonePct = demosMtd ? `${Math.round((demosDone / demosMtd) * 1000) / 10}%` : "";
   document.getElementById("demoRows").innerHTML = demos.length
     ? demos.map((r) =>
-        `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td><td>${cpd(r)}</td></tr>`).join("") +
-      `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td><td></td></tr>`
-    : `<tr><td colspan="4"><span class="sub">No demos recorded yet.</span></td></tr>`;
+        `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td><td>${N(r.done_mtd || 0)}</td><td>${donePct(r)}</td><td>${cpd(r)}</td></tr>`).join("") +
+      `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td><td>${demosDone}</td><td>${totDonePct}</td><td></td></tr>`
+    : `<tr><td colspan="6"><span class="sub">No demos recorded yet.</span></td></tr>`;
 
   // Missed-inbound callback tracking.
   const cbs = d.callbacks || [];
