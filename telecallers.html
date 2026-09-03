@@ -272,7 +272,7 @@ async function load(fromLogin) {
   const auth = c.key ? `key=${encodeURIComponent(c.key)}`
                      : `user=${encodeURIComponent(c.user)}&pass=${encodeURIComponent(c.pass)}`;
   const [from, to] = resolveRange();
-  const q = `${auth}&view=telecallers&from=${from}&to=${to}` + (state.month ? `&month=${state.month}` : "");
+  const q = `${auth}&view=telecallers&from=${from}&to=${to}&cmp=${state.p}` + (state.month ? `&month=${state.month}` : "");
   $("app").classList.add("busy");
   let data = null, err = null;
   try {
