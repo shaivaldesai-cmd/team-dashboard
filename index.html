@@ -155,13 +155,13 @@
   </div>
 
   <div class="card">
-    <h2>First-call speed — new leads in dialable hours</h2>
+    <h2 id="fcTitle">First-call speed — new leads in dialable hours</h2>
     <div class="desc">Leads created 10:30–19:00 IST, by time from creation to their first dial.
       Target: every lead called within 10 minutes.</div>
     <div class="tablewrap"><table>
       <thead><tr>
-        <th>Time to first call</th><th id="h-today">Today</th>
-        <th id="h-yd">Yesterday</th><th id="h-avg">5-day avg</th>
+        <th>Time to first call</th><th id="h-today">Selected day</th>
+        <th id="h-yd">Day before</th><th id="h-avg">5-day avg</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
@@ -277,7 +277,7 @@ function drawChart() {
   document.getElementById("chart").innerHTML =
     `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calls per day with connected portion, last 7 days">${parts.join("")}</svg>`;
   document.querySelectorAll("#chart .bar").forEach((g) =>
-    g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); }));
+    g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); if (state.last) drawFirstCall(state.last); }));
 }
 
 function fmtTalkTotal(talkSeconds) {
@@ -307,11 +307,49 @@ function drawAgents() {
     : `<tr><td colspan="6"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
 }
 
+// First-call speed table for the day selected on the chart (today = live,
+// earlier days = stored rollup), the day before it, and the 5-day average.
+// Counts every outbound channel (dialer + click-to-call) since 2026-09-10.
+function drawFirstCall(d) {
+  const todayKey = state.days[6].day;
+  const byDay = Object.fromEntries((d.daily_stats || []).map((r) => [r.day, r]));
+  byDay[todayKey] = d.today;
+  const sel = state.selected, prevKey = new Date(Date.parse(sel + "T00:00:00Z") - 86400000).toISOString().slice(0, 10);
+  const t = byDay[sel] || null, y = byDay[prevKey] || null, a = d.avg5;
+  const lbl = (k) => istDayLabel(k) + (k === todayKey ? " (today, live)" : "");
+  document.getElementById("fcTitle").textContent = `First-call speed — new leads on ${istDayLabel(sel)}, 10:30–19:00`;
+  document.getElementById("h-today").textContent = t ? `${lbl(sel)} (${t.in_window_leads} leads)` : `${lbl(sel)} (–)`;
+  document.getElementById("h-yd").textContent = y ? `${lbl(prevKey)} (${y.in_window_leads} leads)` : `${lbl(prevKey)} (–)`;
+  document.getElementById("h-avg").textContent = a ? `5-day avg (~${a.avg_in_window}/day)` : "5-day avg";
+  if (!t) {
+    document.getElementById("rows").innerHTML = `<tr><td colspan="4"><span class="sub">No stored data for this day.</span></td></tr>`;
+    return;
+  }
+  const w10t = N(t.called_1m) + N(t.called_1m_10m);
+  const w10y = y ? N(y.called_1m) + N(y.called_1m_10m) : 0;
+  const w10a = a && a.avg_pct_1m != null && a.avg_pct_1m_10m != null
+    ? Math.round((N(a.avg_pct_1m) + N(a.avg_pct_1m_10m)) * 10) / 10 : null;
+  const rows = [
+    ["≤ 1 minute",       t.called_1m,      y && y.called_1m,      N(a && a.avg_pct_1m)],
+    ["1 – 10 minutes",   t.called_1m_10m,  y && y.called_1m_10m,  N(a && a.avg_pct_1m_10m)],
+    ["10 min – 1 hour",  t.called_10m_1h,  y && y.called_10m_1h,  N(a && a.avg_pct_10m_1h)],
+    ["1 hour +",         t.called_over_1h, y && y.called_over_1h, N(a && a.avg_pct_over_1h)],
+    ["Not yet called",   t.uncalled,       y && y.uncalled,       N(a && a.avg_pct_uncalled)],
+    ["Called within 10 min", w10t,          y ? w10y : null,       w10a, "sla"],
+  ];
+  document.getElementById("rows").innerHTML = rows.map(([label, tv, yv, av, cls]) =>
+    `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td>` +
+    `<td>${cell(N(tv), N(t.in_window_leads))}</td>` +
+    `<td>${yv == null ? "–" : cell(N(yv), N(y.in_window_leads))}</td>` +
+    `<td>${avgCell(av)}</td></tr>`).join("");
+}
+
 function render(d) {
   document.getElementById("asof").textContent =
     `Live as of ${new Date(d.generated_at).toLocaleString("en-IN",
       { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST · refreshes every 5 min`;
 
+  state.last = d;
   buildDays(d);
   drawChart();
   drawAgents();
@@ -364,31 +402,9 @@ function render(d) {
         `<td>${cell(N(r.callback_answered), N(r.missed_numbers))}</td></tr>`).join("")
     : `<tr><td colspan="4"><span class="sub">No missed inbound calls recorded.</span></td></tr>`;
 
-  // First-call speed table.
-  const t = d.today, y = d.yesterday, a = d.avg5;
-  document.getElementById("h-today").textContent = `Today (${t.in_window_leads} leads)`;
-  document.getElementById("h-yd").textContent = y ? `Yesterday (${y.in_window_leads} leads)` : "Yesterday (–)";
-  document.getElementById("h-avg").textContent = a ? `5-day avg (~${a.avg_in_window}/day)` : "5-day avg";
-  const w10t = N(t.called_1m) + N(t.called_1m_10m);
-  const w10y = y ? N(y.called_1m) + N(y.called_1m_10m) : 0;
-  const w10a = a && a.avg_pct_1m != null && a.avg_pct_1m_10m != null
-    ? Math.round((N(a.avg_pct_1m) + N(a.avg_pct_1m_10m)) * 10) / 10 : null;
-  const rows = [
-    ["≤ 1 minute",       t.called_1m,      y && y.called_1m,      N(a && a.avg_pct_1m)],
-    ["1 – 10 minutes",   t.called_1m_10m,  y && y.called_1m_10m,  N(a && a.avg_pct_1m_10m)],
-    ["10 min – 1 hour",  t.called_10m_1h,  y && y.called_10m_1h,  N(a && a.avg_pct_10m_1h)],
-    ["1 hour +",         t.called_over_1h, y && y.called_over_1h, N(a && a.avg_pct_over_1h)],
-    ["Not yet called",   t.uncalled,       y && y.uncalled,       N(a && a.avg_pct_uncalled)],
-    ["Called within 10 min", w10t,          y ? w10y : null,       w10a, "sla"],
-  ];
-  document.getElementById("rows").innerHTML = rows.map(([label, tv, yv, av, cls]) =>
-    `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td>` +
-    `<td>${cell(N(tv), N(t.in_window_leads))}</td>` +
-    `<td>${yv == null ? "–" : cell(N(yv), N(y.in_window_leads))}</td>` +
-    `<td>${avgCell(av)}</td></tr>`).join("");
-
+  drawFirstCall(d);
   document.getElementById("foot").innerHTML =
-    `Historical rows are precomputed by the rollup jobs; “Today” is live. ` +
+    `First-call speed counts every outbound channel (dialer and click-to-call). Stored days are recomputed nightly for 7 days; today is live. ` +
     `5-day averages cover the last five weekdays (Mon–Fri) with ≥ ${d.working_day_min} dialer calls — ` +
     `currently ${a ? a.day_list.join(", ") : "–"}. Saturdays, Sundays and holidays are excluded. ` +
     `Per-caller effort and quality: <a href="./telecallers.html">Telecallers</a>. Outcomes for the callers: <a href="./northstar.html">North Star</a>.`;
