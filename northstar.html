@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!-- Caller-facing north-star page: two outcome metrics only, month to date by
+     default. Reads the same JSON endpoint as telecallers.html
+     (?view=telecallers&from&to) twice: the selected period and the comparison
+     period, to compute rank movement client-side. Deploy: copy as
+     northstar.html into the team-dashboard Pages repo. -->
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>North Star — Petpooja Leads</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb; --card: #ffffff; --border: #e4e3df; --row: #f6f6f4;
+    --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a897f;
+    --accent: #2a78d6; --err: #e34948;
+    --up: #1f7a45; --up-bg: #e6f4ea; --down: #b3261e; --down-bg: #fbe9e7; --flat-bg: #efefec;
+    --gold: #b8860b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19; --card: #232322; --border: #3a3936; --row: #2a2a28;
+      --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #8a897f;
+      --accent: #3987e5; --err: #e66767;
+      --up: #6fd39a; --up-bg: #1d3327; --down: #f28b82; --down-bg: #3a2320; --flat-bg: #2f2f2d;
+      --gold: #e2b23c;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--surface); color: var(--ink);
+         font: 16px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px; }
+  .wrap { max-width: 860px; margin: 0 auto; display: grid; gap: 22px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+  header h1 { font-size: 20px; font-weight: 650; }
+  nav { display: flex; gap: 14px; font-size: 14px; }
+  nav a { color: var(--ink-3); text-decoration: none; }
+  nav a.on { color: var(--ink); font-weight: 650; }
+  header .sub { color: var(--ink-3); font-size: 13px; flex-basis: 100%; }
+
+  .periodbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--card); }
+  .seg button { border: none; background: transparent; color: var(--ink-2); font: inherit; font-size: 15px;
+                padding: 9px 18px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .rangelbl { font-size: 14px; color: var(--ink-3); margin-left: auto; }
+
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .tile { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+  .tile .label { font-size: 13px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .tile .value { font-size: 56px; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; margin: 4px 0 2px; }
+  .tile .sub { font-size: 14px; color: var(--ink-2); }
+  .chip { display: inline-block; font-size: 13px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+          margin-top: 10px; background: var(--flat-bg); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chip.up { background: var(--up-bg); color: var(--up); }
+  .chip.down { background: var(--down-bg); color: var(--down); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 8px 0 4px; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 13px 18px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child, th.name, td.name { text-align: left; }
+  thead th { color: var(--ink-3); font-size: 12px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--row); }
+  td.rank { color: var(--ink-3); width: 44px; font-weight: 600; }
+  td.rank .mv { font-size: 12px; margin-left: 4px; }
+  td.rank .mv.up { color: var(--up); } td.rank .mv.down { color: var(--down); }
+  td.name { font-size: 17px; font-weight: 600; }
+  td.big { font-size: 24px; font-weight: 700; }
+  td .n { display: block; font-size: 12px; color: var(--ink-3); font-weight: 400; }
+  tr.top1 td.name::before { content: "★ "; color: var(--gold); }
+  .note { font-size: 13px; color: var(--ink-3); padding: 10px 18px 8px; }
+  footer { font-size: 12.5px; color: var(--ink-3); }
+  #banner { display: none; background: var(--down-bg); color: var(--down); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  #app.busy { opacity: .55; transition: opacity .15s; }
+  #login { display: none; place-items: center; min-height: 70vh; }
+  #login form { display: grid; gap: 10px; width: 260px; padding: 24px; background: var(--card);
+                border: 1px solid var(--border); border-radius: 10px; }
+  #login input { padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: inherit; font: inherit; }
+  #login button { padding: 8px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; font: inherit; }
+  .err { color: var(--err); font-size: 13px; }
+  #app { display: none; }
+  @media (max-width: 560px) {
+    body { padding: 14px; } .tiles { grid-template-columns: 1fr; } .tile .value { font-size: 44px; }
+    th, td { padding: 11px 10px; } td.name { font-size: 15px; } td.big { font-size: 20px; }
+  }
+</style>
+</head><body>
+
+<div id="login"><form id="loginForm">
+  <div style="font-weight:650">Team dashboard</div>
+  <div class="err" id="loginErr" hidden>Wrong username or password.</div>
+  <input id="u" placeholder="username" autocomplete="username">
+  <input id="p" type="password" placeholder="password" autocomplete="current-password">
+  <button type="submit">Open dashboard</button>
+</form></div>
+
+<div id="app"><div class="wrap">
+  <header>
+    <h1>North Star</h1>
+    <nav><a href="./">Overview</a><a href="./telecallers.html">Telecallers</a><a class="on" href="./northstar.html">North Star</a></nav>
+    <div class="sub" id="asof">Loading…</div>
+  </header>
+
+  <div id="banner"></div>
+
+  <div class="periodbar">
+    <div class="seg" id="seg">
+      <button data-p="today">Today</button>
+      <button data-p="yesterday">Yesterday</button>
+      <button data-p="week">This week</button>
+      <button data-p="month">Month to date</button>
+    </div>
+    <div class="rangelbl" id="rangelbl"></div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card">
+    <table>
+      <thead><tr><th></th><th class="name">Caller</th><th>Demos done</th><th>Demos per conversation</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="note" id="note"></div>
+  </div>
+
+  <footer id="foot"></footer>
+</div></div>
+
+<script>
+const API = "https://xuerxrbtofhxdwxglynr.supabase.co/functions/v1/team-dashboard";
+const LS = "petpooja_dash_creds";
+const $ = (id) => document.getElementById(id);
+const N = (x) => Number(x || 0);
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const pct = (n, of) => of ? `${Math.round((n / of) * 1000) / 10}%` : "–";
+const istToday = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+const addDays = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10);
+const fmtDay = (iso, o) => new Date(iso + "T00:00:00+05:30").toLocaleDateString("en-IN",
+  Object.assign({ timeZone: "Asia/Kolkata", day: "numeric", month: "short" }, o || {}));
+const fmtRange = (a, b) => a === b ? fmtDay(a, { weekday: "short" }) : `${fmtDay(a)} – ${fmtDay(b)}`;
+function chip(cur, prev, lbl) {
+  if (!prev) return `<span class="chip">no prior data</span>`;
+  const d = (cur - prev) / prev, cls = Math.abs(d) < 0.005 ? "" : d > 0 ? "up" : "down";
+  return `<span class="chip ${cls}">${d > 0 ? "+" : ""}${Math.round(d * 100)}% ${esc(lbl)}</span>`;
+}
+
+function creds() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("key")) { localStorage.setItem(LS, JSON.stringify({ key: h.get("key") })); h.delete("key"); location.hash = h.toString(); }
+  try { return JSON.parse(localStorage.getItem(LS)) || null; } catch { return null; }
+}
+function show(id) {
+  $("login").style.display = id === "login" ? "grid" : "none";
+  $("app").style.display = id === "app" ? "block" : "none";
+}
+
+const state = { p: "month", data: null, prev: null };
+function readHash() { const p = new URLSearchParams(location.hash.slice(1)).get("p"); if (["today","yesterday","week","month"].includes(p)) state.p = p; }
+function ranges() {
+  const t = istToday();
+  if (state.p === "today") return { from: t, to: t, pf: addDays(t, -1), pt: addDays(t, -1), lbl: "vs yesterday" };
+  if (state.p === "yesterday") { const y = addDays(t, -1); return { from: y, to: y, pf: addDays(y, -1), pt: addDays(y, -1), lbl: "vs day before" }; }
+  if (state.p === "week") {
+    const dow = new Date(t + "T00:00:00Z").getUTCDay(); const mon = addDays(t, -((dow + 6) % 7));
+    return { from: mon, to: t, pf: addDays(mon, -7), pt: addDays(t, -7), lbl: "vs same days last week" };
+  }
+  const first = t.slice(0, 8) + "01";
+  const pm = new Date(Date.parse(first + "T00:00:00Z") - 86400000).toISOString().slice(0, 7);
+  const pmEnd = addDays(first, -1);
+  const want = `${pm}-${t.slice(8, 10)}`;
+  return { from: first, to: t, pf: `${pm}-01`, pt: want <= pmEnd ? want : pmEnd, lbl: "vs same days last month" };
+}
+
+async function load(fromLogin) {
+  const c = creds();
+  if (!c) { show("login"); return; }
+  const auth = c.key ? `key=${encodeURIComponent(c.key)}` : `user=${encodeURIComponent(c.user)}&pass=${encodeURIComponent(c.pass)}`;
+  const r = ranges();
+  $("app").classList.add("busy");
+  let cur = null, prev = null, err = null;
+  try {
+    const [a, b] = await Promise.all([
+      fetch(`${API}?${auth}&view=telecallers&from=${r.from}&to=${r.to}`).then((x) => x.json()),
+      fetch(`${API}?${auth}&view=telecallers&from=${r.pf}&to=${r.pt}`).then((x) => x.json()),
+    ]);
+    if (!a.ok) err = a.error || "error"; else { cur = a; prev = b.ok ? b : null; }
+  } catch { err = "network error"; }
+  $("app").classList.remove("busy");
+  if (err === "unauthorized") { localStorage.removeItem(LS); $("loginErr").hidden = !fromLogin; show("login"); return; }
+  if (err) { if (!state.data) { show("login"); return; } $("banner").textContent = `Could not refresh: ${err}.`; $("banner").style.display = "block"; show("app"); return; }
+  $("banner").style.display = "none";
+  state.data = cur; state.prev = prev;
+  history.replaceState(null, "", "#p=" + state.p);
+  render(cur, prev, r);
+  show("app");
+}
+
+function board(d) {
+  const rows = (d?.effort?.agents || []).map((a) => ({ agent: a.agent, done: N(a.demos_done), conv: N(a.connected) }))
+    .filter((a) => a.conv > 0 || a.done > 0)
+    .sort((x, y) => y.done - x.done || (y.conv ? y.done / y.conv : 0) - (x.conv ? x.done / x.conv : 0) || y.conv - x.conv);
+  rows.forEach((a, i) => a.rank = i + 1);
+  return rows;
+}
+
+function render(d, prevD, r) {
+  document.querySelectorAll("#seg button").forEach((b) => b.classList.toggle("on", b.dataset.p === state.p));
+  $("rangelbl").textContent = fmtRange(r.from, r.to);
+  $("asof").textContent = `As of ${new Date(d.generated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST · refreshes every 5 min`;
+
+  const rows = board(d), prevRows = board(prevD);
+  const prevRank = Object.fromEntries(prevRows.map((a) => [a.agent, a.rank]));
+  const tDone = rows.reduce((s, a) => s + a.done, 0), tConv = rows.reduce((s, a) => s + a.conv, 0);
+  const pDone = prevRows.reduce((s, a) => s + a.done, 0), pConv = prevRows.reduce((s, a) => s + a.conv, 0);
+  const pEff = pConv ? pDone / pConv : 0, cEff = tConv ? tDone / tConv : 0;
+  $("tiles").innerHTML =
+    `<div class="tile"><div class="label">Demos done</div><div class="value">${tDone}</div>` +
+    `<div class="sub">team, ${esc(fmtRange(r.from, r.to))}</div>${chip(tDone, pDone, r.lbl)}</div>` +
+    `<div class="tile"><div class="label">Demos per conversation</div><div class="value">${pct(tDone, tConv)}</div>` +
+    `<div class="sub">${tDone} demos from ${tConv.toLocaleString("en-IN")} conversations</div>${chip(cEff, pEff, r.lbl)}</div>`;
+
+  $("rows").innerHTML = rows.length ? rows.map((a) => {
+    const pr = prevRank[a.agent];
+    const mv = pr == null ? "" : pr > a.rank ? `<span class="mv up">▲${pr - a.rank}</span>` : pr < a.rank ? `<span class="mv down">▼${a.rank - pr}</span>` : `<span class="mv">·</span>`;
+    return `<tr class="${a.rank === 1 && a.done > 0 ? "top1" : ""}"><td class="rank">${a.rank}${mv}</td><td class="name">${esc(a.agent)}</td>` +
+      `<td class="big">${a.done}</td><td class="big">${pct(a.done, a.conv)}<span class="n">${a.conv} conversations</span></td></tr>`;
+  }).join("") : `<tr><td colspan="4" class="note">No calls recorded in this period yet.</td></tr>`;
+
+  const touchesRecent = r.to >= addDays(istToday(), -1);
+  $("note").textContent = (touchesRecent ? "Demos are counted on the day they happened and are logged by the demo team the next morning, so the latest day keeps rising until about 11am. " : "") +
+    "Rank arrows compare with " + r.lbl.replace("vs ", "") + ".";
+  $("foot").textContent = "Demos done = CRM demo done date, credited to the caller in “Demo Assigned By”. Conversations = calls the customer picked up, any channel. Diagnostics live on the Telecallers page.";
+}
+
+document.querySelectorAll("#seg button").forEach((b) => b.addEventListener("click", () => { state.p = b.dataset.p; load(false); }));
+$("loginForm").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  localStorage.setItem(LS, JSON.stringify({ user: $("u").value.trim(), pass: $("p").value }));
+  load(true);
+});
+window.addEventListener("hashchange", () => { readHash(); load(false); });
+readHash(); load(false); setInterval(() => load(false), 5 * 60 * 1000);
+</script>
+</body></html>
