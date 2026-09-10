@@ -72,7 +72,22 @@
   td .n { display: block; font-size: 12px; color: var(--ink-3); font-weight: 400; }
   tr.top1 td.name::before { content: "★ "; color: var(--gold); }
   .note { font-size: 13px; color: var(--ink-3); padding: 10px 18px 8px; }
+  details.acc { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+  details.acc summary { cursor: pointer; padding: 14px 20px; font-weight: 650; list-style: none; display: flex; align-items: center; gap: 10px; }
+  details.acc summary::-webkit-details-marker { display: none; }
+  details.acc summary::before { content: "▸"; color: var(--ink-3); transition: transform .15s; }
+  details.acc[open] summary::before { transform: rotate(90deg); }
+  details.acc summary .hint { font-weight: 400; font-size: 13px; color: var(--ink-3); margin-left: auto; }
+  .funnel { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; align-items: center; gap: 8px; padding: 4px 20px 18px; }
+  .stage { background: var(--row); border-radius: 10px; padding: 12px 14px; text-align: center; }
+  .stage .label { font-size: 12px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .stage .value { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ratio { text-align: center; font-size: 13px; color: var(--ink-2); min-width: 54px; font-variant-numeric: tabular-nums; }
+  .ratio b { display: block; font-size: 15px; color: var(--ink); }
+  .funnelnote { font-size: 13px; color: var(--ink-3); padding: 0 20px 16px; }
+  @media (max-width: 560px) { .funnel { grid-template-columns: 1fr 1fr; } .ratio { grid-column: span 2; min-width: 0; } }
   footer { font-size: 12.5px; color: var(--ink-3); }
+  footer a { color: var(--accent); }
   #banner { display: none; background: var(--down-bg); color: var(--down); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
   #app.busy { opacity: .55; transition: opacity .15s; }
   #login { display: none; place-items: center; min-height: 70vh; }
@@ -117,6 +132,12 @@
   </div>
 
   <div class="tiles" id="tiles"></div>
+
+  <details class="acc" id="acc">
+    <summary>Behind the numbers <span class="hint" id="accHint"></span></summary>
+    <div class="funnel" id="funnel"></div>
+    <div class="funnelnote" id="funnelNote"></div>
+  </details>
 
   <div class="card">
     <table>
@@ -222,6 +243,24 @@ function render(d, prevD, r) {
     `<div class="tile"><div class="label">Demos per conversation</div><div class="value">${pct(tDone, tConv)}</div>` +
     `<div class="sub">${tDone} demos from ${tConv.toLocaleString("en-IN")} conversations</div>${chip(cEff, pEff, r.lbl)}</div>`;
 
+  // Team funnel. Counts always; ratios only when the period is long enough
+  // for the demos to have come from the period's own calls (week / MTD).
+  const ag = d.effort.agents || [];
+  const f = { dials: 0, conv: 0, arr: 0, done: 0 };
+  for (const a of ag) { f.dials += N(a.calls); f.conv += N(a.connected); f.arr += N(a.demos_arranged); f.done += N(a.demos_done); }
+  const long = state.p === "week" || state.p === "month";
+  const stage = (l, v) => `<div class="stage"><div class="label">${l}</div><div class="value">${v.toLocaleString("en-IN")}</div></div>`;
+  const ratio = (n, of, l) => `<div class="ratio">${long ? `<b>${pct(n, of)}</b>${l}` : "→"}</div>`;
+  $("funnel").innerHTML =
+    stage("Dials", f.dials) + ratio(f.conv, f.dials, "picked up") +
+    stage("Conversations", f.conv) + ratio(f.arr, f.conv, "to demo") +
+    stage("Demos arranged", f.arr) + ratio(f.done, f.arr, "done") +
+    stage("Demos done", f.done);
+  $("accHint").textContent = long ? "funnel" : "activity";
+  $("funnelNote").textContent = long
+    ? "Over a week or a month the demos in the period come mostly from the period's own calls, so these ratios read as a funnel. Demos arranged are dated by the scheduled demo date."
+    : "Single-day counts. Demos arranged and done today come from calls made over the previous days, so no ratios are shown for a single day. Switch to This week or Month to date for the funnel.";
+
   $("rows").innerHTML = rows.length ? rows.map((a) => {
     const pr = prevRank[a.agent];
     const mv = pr == null ? "" : pr > a.rank ? `<span class="mv up">▲${pr - a.rank}</span>` : pr < a.rank ? `<span class="mv down">▼${a.rank - pr}</span>` : `<span class="mv">·</span>`;
@@ -232,7 +271,8 @@ function render(d, prevD, r) {
   const touchesRecent = r.to >= addDays(istToday(), -1);
   $("note").textContent = (touchesRecent ? "Demos are counted on the day they happened and are logged by the demo team the next morning, so the latest day keeps rising until about 11am. " : "") +
     "Rank arrows compare with " + r.lbl.replace("vs ", "") + ".";
-  $("foot").textContent = "Demos done = CRM demo done date, credited to the caller in “Demo Assigned By”. Conversations = calls the customer picked up, any channel. Diagnostics live on the Telecallers page.";
+  $("foot").innerHTML = "Demos done = CRM demo done date, credited to the caller in “Demo Assigned By”. Conversations = calls the customer picked up, any channel. " +
+    `Drivers and rates per caller: <a href="./telecallers.html">Telecallers</a>. Speed to first call and callbacks: <a href="./">Overview</a>.`;
 }
 
 document.querySelectorAll("#seg button").forEach((b) => b.addEventListener("click", () => { state.p = b.dataset.p; load(false); }));

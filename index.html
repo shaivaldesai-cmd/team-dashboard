@@ -63,6 +63,7 @@
   .sub { color: var(--ink-3); font-size: 12.5px; }
   .note { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
   footer { font-size: 12px; color: var(--ink-3); }
+  footer a { color: var(--accent); }
   #chart svg { width: 100%; height: auto; display: block; }
   #chart .bar { cursor: pointer; }
   #agentTitle { font-size: 13px; font-weight: 650; margin: 12px 0 4px; }
@@ -389,7 +390,8 @@ function render(d) {
   document.getElementById("foot").innerHTML =
     `Historical rows are precomputed by the rollup jobs; “Today” is live. ` +
     `5-day averages cover the last five weekdays (Mon–Fri) with ≥ ${d.working_day_min} dialer calls — ` +
-    `currently ${a ? a.day_list.join(", ") : "–"}. Saturdays, Sundays and holidays are excluded.`;
+    `currently ${a ? a.day_list.join(", ") : "–"}. Saturdays, Sundays and holidays are excluded. ` +
+    `Per-caller effort and quality: <a href="./telecallers.html">Telecallers</a>. Outcomes for the callers: <a href="./northstar.html">North Star</a>.`;
 }
 
 document.getElementById("loginForm").addEventListener("submit", (e) => {

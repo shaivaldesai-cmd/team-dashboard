@@ -91,6 +91,7 @@
   .note { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
   #chart svg { width: 100%; height: auto; display: block; }
   footer { font-size: 12px; color: var(--ink-3); }
+  footer a { color: var(--accent); }
   #banner { display: none; background: var(--down-bg); color: var(--down); border-radius: 8px; padding: 10px 14px; font-size: 13.5px; }
   #app.busy { opacity: .55; transition: opacity .15s; }
   #login { display: none; place-items: center; min-height: 70vh; }
@@ -318,7 +319,8 @@ function render(d) {
   $("foot").innerHTML =
     `Human calls only (dialer, click-to-call and manual), from Acefone call records. Demos are credited to the ` +
     `telecaller named in the CRM's “Demo Assigned By”. Per-caller history starts ${fmtDay(CALL_FLOOR)} and demo ` +
-    `attribution is reliable from ${fmtDay(DEMO_FLOOR)}; earlier ranges will read low.`;
+    `attribution is reliable from ${fmtDay(DEMO_FLOOR)}; earlier ranges will read low. ` +
+    `Outcomes only, for the callers: <a href="./northstar.html">North Star</a>. Speed to first call and callbacks: <a href="./">Overview</a>.`;
 }
 
 function renderEffortTiles(e) {
