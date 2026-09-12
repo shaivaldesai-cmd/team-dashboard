@@ -156,7 +156,7 @@
 
   <div class="card">
     <h2 id="fcTitle">First-call speed — new leads in dialable hours</h2>
-    <div class="desc">Leads created 10:30–19:00 IST, by time from creation to their first dial.
+    <div class="desc">Leads created 10:30–19:00 IST that were meant for the dialer, by time from creation to their first dial on any channel.
       Target: every lead called within 10 minutes.</div>
     <div class="tablewrap"><table>
       <thead><tr>
@@ -318,8 +318,8 @@ function drawFirstCall(d) {
   const t = byDay[sel] || null, y = byDay[prevKey] || null, a = d.avg5;
   const lbl = (k) => istDayLabel(k) + (k === todayKey ? " (today, live)" : "");
   document.getElementById("fcTitle").textContent = `First-call speed — new leads on ${istDayLabel(sel)}, 10:30–19:00`;
-  document.getElementById("h-today").textContent = t ? `${lbl(sel)} (${t.in_window_leads} leads)` : `${lbl(sel)} (–)`;
-  document.getElementById("h-yd").textContent = y ? `${lbl(prevKey)} (${y.in_window_leads} leads)` : `${lbl(prevKey)} (–)`;
+  document.getElementById("h-today").textContent = t ? `${lbl(sel)} (${t.in_window_leads} dialable)` : `${lbl(sel)} (–)`;
+  document.getElementById("h-yd").textContent = y ? `${lbl(prevKey)} (${y.in_window_leads} dialable)` : `${lbl(prevKey)} (–)`;
   document.getElementById("h-avg").textContent = a ? `5-day avg (~${a.avg_in_window}/day)` : "5-day avg";
   if (!t) {
     document.getElementById("rows").innerHTML = `<tr><td colspan="4"><span class="sub">No stored data for this day.</span></td></tr>`;
@@ -341,7 +341,13 @@ function drawFirstCall(d) {
     `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td>` +
     `<td>${cell(N(tv), N(t.in_window_leads))}</td>` +
     `<td>${yv == null ? "–" : cell(N(yv), N(y.in_window_leads))}</td>` +
-    `<td>${avgCell(av)}</td></tr>`).join("");
+    `<td>${avgCell(av)}</td></tr>`).join("") +
+    // Leads created straight into a demo/closed stage, or gated out
+    // (referral campaign): never meant for the dialer, shown for completeness,
+    // excluded from every percentage above.
+    `<tr><td><span class="sub">Not for the dialer (created in a demo/closed stage, or referral)</span></td>` +
+    `<td><span class="sub">${N(t.not_for_dialer)}</span></td><td><span class="sub">${y ? N(y.not_for_dialer) : "–"}</span></td>` +
+    `<td><span class="sub">${a && a.avg_not_for_dialer != null ? `~${N(a.avg_not_for_dialer)}/day` : "–"}</span></td></tr>`;
 }
 
 function render(d) {
