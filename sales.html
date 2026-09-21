@@ -193,8 +193,8 @@ function renderTable(d) {
   const rows = d.rows.slice().sort((a, b) => {
     if (state.sortKey === "name") return state.sortDir * a.name.localeCompare(b.name);
     const k = state.sortKey;
-    const av = a[k].actual - a[k].expected, bv = b[k].actual - b[k].expected;
-    return state.sortDir * (av - bv);
+    const ratio = (o) => o.expected ? o.actual / o.expected : -1;
+    return state.sortDir * (ratio(a[k]) - ratio(b[k]));
   });
   $("tbody").innerHTML = rows.map((r) => {
     const stalled = COLS.every(([k]) => r[k].demos >= 20 && r[k].actual === 0);
@@ -224,8 +224,9 @@ function render(d) {
   renderTable(d);
   $("note").innerHTML =
     `Each cell is closures banked so far <b>vs</b> what the closure curve expects by now. ` +
-    `Expected assumes a ${d.base_rate}% eventual conversion — the rate implied by the ${d.today.benchmark}% same-day benchmark — ` +
-    `matured to ${d.windows.week.maturity}% at a week, ${d.windows.fortnight.maturity}% at a fortnight and ${d.windows.month.maturity}% at a month. ` +
+    `Expected assumes a ${d.base_rate}% eventual conversion, matured to ` +
+    `${d.windows.week.maturity}% of that at a week, ${d.windows.fortnight.maturity}% at a fortnight and ${d.windows.month.maturity}% at a month. ` +
+    `The ${d.today.benchmark}% figure on the top block is the separate same-day benchmark. ` +
     `Demos are credited to the salesperson who gave them; a telecaller owning the deal at demo time is treated as a transfer artifact.`;
   $("foot").innerHTML =
     `Payroll pipeline only. Ownership history begins 20 July 2026. ` +
