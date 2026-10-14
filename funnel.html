@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<!-- Payroll funnel, month to date vs the same dates last month, each rebuilt as
+     the CRM stood at the end of its last day. Reads team-dashboard?view=funnel,
+     which serves the newest public.dashboard_snapshots row (kind='funnel'),
+     written nightly (T-1) by scripts/funnel-snapshot. Deploy: copy as
+     funnel.html into the team-dashboard Pages repo. -->
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Funnel — Petpooja Leads</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb; --card: #ffffff; --border: #e4e3df; --row: #f6f6f4; --track: #efeeea;
+    --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a897f;
+    --accent: #2a78d6; --accent-2: #9cc0ec; --err: #e34948;
+    --up: #1f7a45; --up-bg: #e6f4ea; --down: #b3261e; --down-bg: #fbe9e7; --flat-bg: #efefec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19; --card: #232322; --border: #3a3936; --row: #2a2a28; --track: #2f2f2d;
+      --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #8a897f;
+      --accent: #3987e5; --accent-2: #2c5584; --err: #e66767;
+      --up: #6fd39a; --up-bg: #1d3327; --down: #f28b82; --down-bg: #3a2320; --flat-bg: #2f2f2d;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--surface); color: var(--ink);
+         font: 16px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px; }
+  .wrap { max-width: 920px; margin: 0 auto; display: grid; gap: 22px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; }
+  header h1 { font-size: 20px; font-weight: 650; }
+  nav { display: flex; flex-wrap: wrap; gap: 14px; font-size: 14px; }
+  nav a { color: var(--ink-3); text-decoration: none; }
+  nav a.on { color: var(--ink); font-weight: 650; }
+  header .sub { color: var(--ink-3); font-size: 13px; flex-basis: 100%; }
+
+  .period { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px 18px; display: grid; gap: 18px; }
+  .period.prev { background: transparent; }
+  .phead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+  .phead h2 { font-size: 17px; font-weight: 650; }
+  .phead .tag { font-size: 11.5px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .phead .asof { font-size: 13px; color: var(--ink-3); flex-basis: 100%; }
+
+  .label-sm { font-size: 12px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .stages { display: grid; gap: 10px; }
+  .st { display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: center; }
+  .st .name { font-size: 15px; font-weight: 600; }
+  .st .name small { display: block; font-size: 12px; font-weight: 400; color: var(--ink-3); }
+  .bar { position: relative; height: 34px; background: var(--track); border-radius: 4px; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 4px; min-width: 3px; }
+  .bar .fill.soft { background: var(--accent-2); }
+  .bar .val { position: absolute; top: 50%; transform: translateY(-50%); white-space: nowrap;
+              font-variant-numeric: tabular-nums; font-size: 14px; color: var(--ink); }
+  .bar .val b { font-size: 16px; }
+  .bar .val .pct { color: var(--ink-2); margin-left: 8px; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+          margin-left: 8px; background: var(--flat-bg); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .chip.good { background: var(--up-bg); color: var(--up); }
+  .chip.bad { background: var(--down-bg); color: var(--down); }
+  .aside { font-size: 13px; color: var(--ink-2); padding-left: 164px; margin-top: -4px; font-variant-numeric: tabular-nums; }
+
+  .drops { display: grid; gap: 6px; }
+  .dr { display: grid; grid-template-columns: 150px 1fr 220px; gap: 14px; align-items: center; font-size: 14px; }
+  .dr .dbar { height: 12px; background: var(--track); border-radius: 4px; position: relative; }
+  .dr .dbar .fill { position: absolute; inset: 0 auto 0 0; background: var(--ink-3); border-radius: 4px; min-width: 2px; opacity: .75; }
+  .dr .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+  .dr .num b { color: var(--ink); font-weight: 600; }
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .mini { font-size: 13.5px; color: var(--ink-2); display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+  .mini div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 3px; }
+  .mini div:last-child { border-bottom: none; }
+  .foot { font-size: 12.5px; color: var(--ink-3); }
+
+  details.defs { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+  details.defs summary { cursor: pointer; padding: 14px 20px; font-weight: 650; list-style: none; }
+  details.defs summary::-webkit-details-marker { display: none; }
+  details.defs summary::before { content: "▸ "; color: var(--ink-3); }
+  details.defs[open] summary::before { content: "▾ "; }
+  details.defs ol { padding: 0 24px 16px 42px; font-size: 14px; color: var(--ink-2); display: grid; gap: 6px; max-width: 75ch; }
+  footer { font-size: 12.5px; color: var(--ink-3); }
+  footer a { color: var(--accent); }
+
+  #tip { position: fixed; pointer-events: none; z-index: 10; background: var(--ink); color: var(--card);
+         font-size: 12.5px; padding: 6px 9px; border-radius: 6px; white-space: nowrap; display: none;
+         font-variant-numeric: tabular-nums; }
+  #banner { display: none; background: var(--down-bg); color: var(--down); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  #app.busy { opacity: .55; transition: opacity .15s; }
+  #login { display: none; place-items: center; min-height: 70vh; }
+  #login form { display: grid; gap: 10px; width: 260px; padding: 24px; background: var(--card);
+                border: 1px solid var(--border); border-radius: 10px; }
+  #login input { padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: inherit; font: inherit; }
+  #login button { padding: 8px; border-radius: 6px; border: none; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; font: inherit; }
+  .err { color: var(--err); font-size: 13px; }
+  #app { display: none; }
+  @media (max-width: 640px) {
+    body { padding: 14px; }
+    .st, .dr { grid-template-columns: 1fr; gap: 4px; }
+    .dr .num { text-align: left; }
+    .aside { padding-left: 0; }
+    .twocol { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head><body>
+
+<div id="login"><form id="loginForm">
+  <div style="font-weight:650">Team dashboard</div>
+  <div class="err" id="loginErr" hidden>Wrong username or password.</div>
+  <input id="u" placeholder="username" autocomplete="username">
+  <input id="p" type="password" placeholder="password" autocomplete="current-password">
+  <button type="submit">Open dashboard</button>
+</form></div>
+
+<div id="app"><div class="wrap">
+  <header>
+    <h1>Funnel</h1>
+    <nav><a href="./">Overview</a><a href="./telecallers.html">Telecallers</a><a href="./northstar.html">North Star</a><a href="./sales.html">Sales</a><a class="on" href="./funnel.html">Funnel</a></nav>
+    <div class="sub" id="asof">Loading…</div>
+  </header>
+  <div id="banner"></div>
+  <section class="period" id="cur"></section>
+  <section class="period prev" id="prev"></section>
+  <details class="defs">
+    <summary>How these numbers are built</summary>
+    <ol>
+      <li><b>Leads</b> are new payroll deals created in the period, counted by the deal's create date. Leads the CRM routes to POS, Invoice, Tasks or PPU within five minutes of arriving are left out, as are deals deleted or merged away before the snapshot.</li>
+      <li><b>Snapshot</b>: each funnel is the CRM as it stood at 23:59 on the period's last day, rebuilt from the deal stage history. Last month's funnel is exactly what you'd have seen opening the CRM at that moment.</li>
+      <li><b>Reached a stage</b> means the deal got there at any point before the snapshot, even if it later moved on. A deal created straight into Demo Shown counts as arranged.</li>
+      <li><b>Demo done</b> means the deal reached Demo Shown, After Demo or Missed Sales, or closed after being arranged. This uses the stage history, not the demo-done-date field, because only the history shows what the CRM said on the day.</li>
+      <li><b>Closed after demo</b> counts deals that reached Deal Closed having been arranged. Deals closed without ever being arranged (direct payments) are listed separately.</li>
+      <li><b>Where the rest sat</b> is each lead's stage at the snapshot, for leads that hadn't reached demo arranged. These are not final: a lead in Call Not Connected at the snapshot may still convert later. Comparing both months at the same age is what makes the two funnels fair.</li>
+      <li><b>Re-enquiries</b> are older deals that came back into payroll Inbound during the period. They're counted but kept out of the funnel, since their earlier history would distort it.</li>
+    </ol>
+  </details>
+  <footer id="foot"></footer>
+</div></div>
+<div id="tip"></div>
+
+<script>
+const API = "https://xuerxrbtofhxdwxglynr.supabase.co/functions/v1/team-dashboard";
+const LS = "petpooja_dash_creds";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const fmt = (n) => Number(n || 0).toLocaleString("en-IN");
+const pct = (n, of) => of ? (100 * n / of) : 0;
+const p1 = (x) => `${(Math.round(x * 10) / 10).toFixed(1)}%`;
+const fmtDay = (iso, withYear) => new Date(iso + "T00:00:00+05:30").toLocaleDateString("en-IN",
+  Object.assign({ timeZone: "Asia/Kolkata", day: "numeric", month: "short" }, withYear ? { year: "numeric" } : {}));
+const range = (a, b) => {
+  const A = new Date(a + "T00:00:00+05:30"), B = new Date(b + "T00:00:00+05:30");
+  return A.getMonth() === B.getMonth()
+    ? `${A.getDate()}–${fmtDay(b, true)}` : `${fmtDay(a)} – ${fmtDay(b, true)}`;
+};
+
+// Where leads that never reached demo arranged sat at the snapshot. Fixed order
+// so the two months line up row for row.
+const DROPS = [
+  ["cnc", "Call not connected", ["4"]],
+  ["cbk", "Callback requested", ["69"]],
+  ["irl", "Irrelevant", ["79"]],
+  ["nr",  "No response", ["245"]],
+  ["cold","Cold (no demo)", ["73"]],
+  ["new", "Not yet touched", ["3", "344"]],
+  ["out", "Moved out", ["80", "81", "82", "other_pipeline"]],
+  ["cls", "Closed without a demo", ["77"]],
+];
+function bucket(map, groups) {
+  const used = new Set(), out = {};
+  for (const [k, , ids] of groups) { out[k] = ids.reduce((s, id) => (used.add(id), s + (map[id] || 0)), 0); }
+  out.other = Object.entries(map).filter(([id]) => !used.has(id)).reduce((s, [, n]) => s + n, 0);
+  return out;
+}
+
+function creds() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("key")) { localStorage.setItem(LS, JSON.stringify({ key: h.get("key") })); h.delete("key"); location.hash = h.toString(); }
+  try { return JSON.parse(localStorage.getItem(LS)) || null; } catch { return null; }
+}
+function show(id) {
+  $("login").style.display = id === "login" ? "grid" : "none";
+  $("app").style.display = id === "app" ? "block" : "none";
+}
+
+// pp change chip; `higherIsGood` decides the colour, the arrow and sign carry the meaning.
+function ppChip(cur, prev, higherIsGood) {
+  const d = cur - prev;
+  if (Math.abs(d) < 0.05) return `<span class="chip">no change</span>`;
+  const good = higherIsGood ? d > 0 : d < 0;
+  return `<span class="chip ${good ? "good" : "bad"}">${d > 0 ? "▲ +" : "▼ "}${(Math.round(d * 10) / 10).toFixed(1)} pts</span>`;
+}
+function countChip(cur, prev) {
+  if (!prev) return "";
+  const d = 100 * (cur - prev) / prev;
+  return `<span class="chip">${d > 0 ? "▲ +" : d < 0 ? "▼ " : ""}${Math.round(d)}% vs last month</span>`;
+}
+
+function stagesOf(P) {
+  const f = P.funnel;
+  return [
+    { k: "leads",    name: "New leads",         n: f.leads,             step: null,                          stepOf: "" },
+    { k: "arranged", name: "Demo arranged",     n: f.arranged,          step: pct(f.arranged, f.leads),      stepOf: "of leads" },
+    { k: "done",     name: "Demo done",         n: f.done,              step: pct(f.done, f.arranged),       stepOf: "of arranged" },
+    { k: "closed",   name: "Closed after demo", n: f.closed_after_demo, step: pct(f.closed_after_demo, f.done), stepOf: "of done" },
+  ];
+}
+
+function renderPeriod(el, P, other, isCurrent, scaleMax, dropMax) {
+  const f = P.funnel, S = stagesOf(P), O = other ? stagesOf(other) : null;
+  const stagesHtml = S.map((s, i) => {
+    const w = 100 * s.n / scaleMax;
+    const inside = w > 34;
+    const share = i === 0 ? "" : `<span class="pct">${p1(s.step)} ${s.stepOf}</span>`;
+    const chip = !isCurrent || !O ? "" : i === 0 ? countChip(s.n, O[0].n) : ppChip(s.step, O[i].step, true);
+    const tip = i === 0 ? `${s.name}: ${fmt(s.n)}`
+      : `${s.name}: ${fmt(s.n)} · ${p1(s.step)} ${s.stepOf} · ${p1(pct(s.n, f.leads))} of leads`;
+    return `<div class="st">
+      <div class="name">${s.name}${i > 0 ? `<small>${p1(pct(s.n, f.leads))} of leads</small>` : ""}</div>
+      <div class="bar" data-tip="${esc(tip)}">
+        <div class="fill${i === 0 ? " soft" : ""}" style="width:${w}%"></div>
+        <div class="val" style="${inside ? `left:12px;color:${i === 0 ? "var(--ink)" : "#fff"}` : `left:calc(${w}% + 10px)`}">
+          <b${inside && i > 0 ? ' style="color:#fff"' : ""}>${fmt(s.n)}</b>${inside && i > 0 ? share.replace('class="pct"', 'class="pct" style="color:#fff;opacity:.9"') : share}${chip}
+        </div>
+      </div></div>`;
+  }).join("");
+
+  const missedPct = pct(f.missed_at_snapshot, f.done);
+  const oMissed = other ? pct(other.funnel.missed_at_snapshot, other.funnel.done) : null;
+  const aside = `<div class="aside">Missed sales after demo: <b>${fmt(f.missed_at_snapshot)}</b> (${p1(missedPct)} of done)${isCurrent && other ? ppChip(missedPct, oMissed, false) : ""}
+      · closed without a demo: <b>${fmt(f.closed_without_demo)}</b></div>`;
+
+  const notArr = f.leads - f.arranged;
+  const B = bucket(P.not_arranged_at_snapshot, DROPS);
+  const OB = other ? bucket(other.not_arranged_at_snapshot, DROPS) : null;
+  const rows = DROPS.map(([k, label]) => [k, label]).concat(B.other ? [["other", "Other"]] : []);
+  const dropsHtml = rows.map(([k, label]) => {
+    const share = pct(B[k], f.leads);
+    const chip = isCurrent && OB ? ppChip(share, pct(OB[k] || 0, other.funnel.leads), false) : "";
+    return `<div class="dr">
+      <div>${label}</div>
+      <div class="dbar" data-tip="${esc(`${label}: ${fmt(B[k])} · ${p1(share)} of leads`)}"><div class="fill" style="width:${100 * share / dropMax}%"></div></div>
+      <div class="num"><b>${fmt(B[k])}</b> · ${p1(share)}${chip}</div>
+    </div>`;
+  }).join("");
+
+  const and = P.arranged_not_done_at_snapshot, ad = P.after_demo_at_snapshot;
+  const awaiting = and["71"] || 0, fellBack = Object.values(and).reduce((a, b) => a + b, 0) - awaiting;
+  const g = (m, ids) => ids.reduce((s, id) => s + (m[id] || 0), 0);
+  const afterKnown = ["74", "75", "78", "77"];
+  const afterOther = Object.entries(ad).filter(([id]) => !afterKnown.includes(id)).reduce((s, [, n]) => s + n, 0);
+
+  const ex = P.excluded;
+  el.innerHTML = `
+    <div class="phead">
+      <span class="tag">${isCurrent ? "This month" : "Same dates last month"}</span>
+      <h2>${range(P.first_day, P.last_day)}</h2>
+      <div class="asof">As the CRM stood at 23:59 on ${fmtDay(P.last_day, true)}</div>
+    </div>
+    <div class="stages">${stagesHtml}</div>
+    ${aside}
+    <div>
+      <div class="label-sm" style="margin-bottom:8px">Leads that hadn't reached demo arranged: ${fmt(notArr)} (${p1(pct(notArr, f.leads))}) — where they sat</div>
+      <div class="drops">${dropsHtml}</div>
+    </div>
+    <div class="twocol">
+      <div class="mini"><span class="label-sm">Arranged, demo not done yet</span>
+        <div><span>Still awaiting the demo</span><b>${fmt(awaiting)}</b></div>
+        <div><span>Fell back (cold, no response, callback…)</span><b>${fmt(fellBack)}</b></div></div>
+      <div class="mini"><span class="label-sm">After the demo</span>
+        <div><span>Demo shown, still open</span><b>${fmt(g(ad, ["74"]))}</b></div>
+        <div><span>Future prospect</span><b>${fmt(g(ad, ["75"]))}</b></div>
+        <div><span>Missed sales</span><b>${fmt(g(ad, ["78"]))}</b></div>
+        <div><span>Closed</span><b>${fmt(g(ad, ["77"]))}</b></div>
+        ${afterOther ? `<div><span>Moved elsewhere</span><b>${fmt(afterOther)}</b></div>` : ""}</div>
+    </div>
+    <div class="foot">Left out: ${fmt(ex.routed_at_arrival)} routed to another product on arrival, ${fmt(ex.merged_before_snapshot)} merged and ${fmt(ex.deleted_before_snapshot)} deleted before the snapshot. Re-enquiries on older deals during the period: ${fmt(P.reenquiries)}.</div>`;
+}
+
+function render(d) {
+  const cur = d.periods.current, prev = d.periods.previous;
+  const scaleMax = Math.max(cur.funnel.leads, prev.funnel.leads) || 1;
+  const shares = [cur, prev].flatMap((P) => {
+    const B = bucket(P.not_arranged_at_snapshot, DROPS);
+    return Object.values(B).map((n) => pct(n, P.funnel.leads));
+  });
+  const dropMax = Math.max(...shares, 1);
+  renderPeriod($("cur"), cur, prev, true, scaleMax, dropMax);
+  renderPeriod($("prev"), prev, null, false, scaleMax, dropMax);
+  $("foot").innerHTML = `Payroll pipeline only. Rebuilt nightly from the CRM's stage history; both months use the same day-of-month cutoff. ` +
+    `Why a stage moved is on the calling pages: <a href="./telecallers.html">Telecallers</a> · <a href="./">Overview</a>.`;
+}
+
+// hover tooltips
+document.addEventListener("mousemove", (e) => {
+  const t = e.target.closest && e.target.closest("[data-tip]"), tip = $("tip");
+  if (!t) { tip.style.display = "none"; return; }
+  tip.textContent = t.dataset.tip; tip.style.display = "block";
+  const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 8);
+  tip.style.left = x + "px"; tip.style.top = (e.clientY + 16) + "px";
+});
+
+async function load(fromLogin) {
+  const c = creds();
+  if (!c) { show("login"); return; }
+  const auth = c.key ? `key=${encodeURIComponent(c.key)}` : `user=${encodeURIComponent(c.user)}&pass=${encodeURIComponent(c.pass)}`;
+  $("app").classList.add("busy");
+  let res = null, err = null;
+  try {
+    res = await fetch(`${API}?${auth}&view=funnel`).then((x) => x.json());
+    if (!res.ok) err = res.error || "error";
+  } catch { err = "network error"; }
+  $("app").classList.remove("busy");
+  if (err === "unauthorized") { localStorage.removeItem(LS); $("loginErr").hidden = !fromLogin; show("login"); return; }
+  show("app");
+  if (err) { $("banner").textContent = `Could not load: ${err}.`; $("banner").style.display = "block"; return; }
+  if (res.empty || !res.data) {
+    $("asof").textContent = "No snapshot yet — the nightly job hasn't run.";
+    return;
+  }
+  $("banner").style.display = "none";
+  render(res.data);
+  const asOf = res.as_of, ageDays = Math.round((Date.now() - Date.parse(asOf + "T23:59:59+05:30")) / 86400000);
+  $("asof").textContent = `Month to date through ${fmtDay(asOf, true)}, compared with the same dates last month · refreshed nightly`;
+  if (ageDays > 1) {
+    $("banner").textContent = `This snapshot is ${ageDays} days old — the nightly job has missed a run.`;
+    $("banner").style.display = "block";
+  }
+}
+
+$("loginForm").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  localStorage.setItem(LS, JSON.stringify({ user: $("u").value.trim(), pass: $("p").value }));
+  load(true);
+});
+load(false);
+</script>
+</body></html>
