@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Payroll Sales · Diagnostics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --ink: #0b0d12; --ink-2: #3d4350; --ink-3: #7a8190;
+    --line: #e7e9ee; --line-2: #f2f3f6; --panel: #fafbfc;
+    --accent: #2457e6; --accent-2: #edf2ff;
+    --good: #12805c; --bad: #c2352b; --bad-2: #fcefee; --warn: #9a6a00; --warn-2: #fff7e6;
+    --radius: 14px;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .top-in { max-width: 1200px; margin: 0 auto; padding: 0 28px; height: 60px; display: flex; align-items: center; gap: 28px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; }
+  .brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: inline-block; }
+  .brand span { color: var(--ink-3); font-weight: 500; }
+  nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  nav a { font-size: 13.5px; color: var(--ink-3); text-decoration: none; padding: 7px 11px; border-radius: 8px; white-space: nowrap; }
+  nav a:hover { color: var(--ink); }
+  nav a.on { color: var(--ink); background: var(--line-2); font-weight: 500; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 28px 80px; display: grid; gap: 22px; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+  h1 { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; display: flex; align-items: center; gap: 10px; }
+  .tabs { display: inline-flex; gap: 2px; border-bottom: 1px solid var(--line); }
+  .tabs button { all: unset; cursor: pointer; font-size: 14px; padding: 8px 14px; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs button[aria-selected="true"] { color: var(--ink); font-weight: 500; border-bottom-color: var(--ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tabs small { font-size: 11.5px; color: var(--ink-3); margin-left: 4px; }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); position: sticky; top: 68px; z-index: 10; }
+  .bar label, .bar .lbl { font-size: 13.5px; font-weight: 500; }
+  select { font: inherit; font-size: 14px; padding: 6px 30px 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+           appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+           background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; min-width: 170px; }
+  select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .grp { display: flex; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; background: #fff; flex-wrap: wrap; }
+  .seg button { all: unset; cursor: pointer; font-size: 13px; padding: 5px 12px; border-radius: 6px; color: var(--ink-3); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .range { font-size: 13.5px; color: var(--ink-2); }
+  .clear { all: unset; cursor: pointer; font-size: 13px; color: var(--accent); }
+
+  .block { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 18px; }
+  .block-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .block-h h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .who { font-size: 13.5px; color: var(--ink-3); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .tile { padding: 16px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-2); display: grid; gap: 4px; align-content: start; }
+  .tile-l { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink-2); font-weight: 500; }
+  .v { font-size: 34px; line-height: 1.1; font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 13px; color: var(--ink-3); }
+  .sub b { color: var(--ink-2); font-weight: 500; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 10px 10px; border-bottom: 1px solid var(--line-2); text-align: right; white-space: nowrap; vertical-align: top; }
+  th:first-child, td:first-child { text-align: left; white-space: normal; padding-left: 0; }
+  th:last-child, td:last-child { padding-right: 0; }
+  thead th { font-size: 12.5px; font-weight: 500; color: var(--ink-3); border-bottom: 1px solid var(--line); vertical-align: bottom; }
+  thead th.sort { cursor: pointer; user-select: none; } thead th.sort:hover { color: var(--ink); }
+  thead th[aria-sort="ascending"]::after { content: " ↑"; } thead th[aria-sort="descending"]::after { content: " ↓"; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: var(--panel); }
+  tr.total td { font-weight: 600; border-top: 1px solid var(--line); border-bottom: 0; }
+  .chk { font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .basis { font-size: 11.5px; font-weight: 500; color: var(--accent); background: var(--accent-2); border-radius: 999px; padding: 1px 8px; margin-left: 6px; white-space: nowrap; cursor: help; }
+  .basis.now { color: var(--ink-2); background: var(--line-2); }
+  .owner { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
+  .pill { font-size: 12.5px; font-weight: 500; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+  .pill.ok { color: var(--good); background: #e8f5ef; } .pill.bad { color: var(--bad); background: var(--bad-2); } .pill.warn { color: var(--warn); background: var(--warn-2); }
+  .view { all: unset; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--accent); }
+  .view:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .view:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  tr.deals td { background: var(--panel); padding: 0 0 12px; }
+  .deals-in { padding: 4px 14px 2px; }
+  .deals-in table { font-size: 13px; }
+  .deals-in th, .deals-in td { padding: 7px 8px; }
+  .deals-in td:first-child, .deals-in th:first-child { padding-left: 0; }
+  .more { font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0; }
+  .hot { color: var(--bad); font-weight: 600; }
+  .zero { color: #b8bdc6; }
+  .scroll { overflow-x: auto; }
+  #t-reps th { white-space: normal; min-width: 64px; line-height: 1.25; }
+  #t-reps td:first-child, #t-reps th:first-child { white-space: nowrap; min-width: 70px; }
+  #t-reps td, #t-reps th { padding-left: 6px; padding-right: 6px; }
+  .note { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+  footer { font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 16px; }
+
+  .i { width: 17px; height: 17px; border-radius: 50%; border: 1px solid #c9ced6; color: var(--ink-3); font: 600 10.5px/15px var(--sans);
+       display: inline-grid; place-items: center; cursor: help; background: #fff; padding: 0; flex: none; }
+  .i:hover, .i:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+  #tip { position: fixed; z-index: 50; pointer-events: none; max-width: 320px; background: var(--ink); color: #fff; font-size: 12.5px; line-height: 1.45;
+         padding: 9px 11px; border-radius: 9px; box-shadow: 0 8px 24px rgba(16,24,40,.18); opacity: 0; transition: opacity .12s; white-space: pre-line; }
+  #tip.show { opacity: 1; }
+  [hidden] { display: none !important; }
+
+  #dash-login { position: fixed; inset: 0; z-index: 60; display: none; place-items: center; background: rgba(255,255,255,.96); }
+  #dash-login form { display: grid; gap: 10px; width: min(300px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--line);
+                     border-radius: 14px; background: #fff; box-shadow: 0 12px 32px rgba(16,24,40,.08); }
+  #dash-login input { font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; }
+  #dash-login button { font: inherit; padding: 9px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 500; cursor: pointer; }
+  #dash-login .err { margin: 0; color: var(--bad); font-size: 13px; }
+  .err-box { border: 1px solid #f3c6c2; background: #fff6f5; color: var(--bad); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+  .loading { opacity: .45; transition: opacity .15s; }
+  @media (max-width: 560px) { .top-in, main { padding-left: 16px; padding-right: 16px; } .bar { position: static; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><i></i>Petpooja <span>Payroll sales</span></div>
+    <nav aria-label="Pages">
+      <a href="index.html">Home</a>
+      <a href="calling.html">Calling</a>
+      <a href="diagnostics.html" class="on">Diagnostics</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="head">
+    <h1>Diagnostics <button class="i" type="button" aria-label="About this page" data-tip="Errors that cost us leads, credited to whoever made them. Pick a rep to go through one person's issues; open any check to see the exact deals.">i</button></h1>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="team" aria-selected="true">Team errors</button>
+      <button type="button" role="tab" data-tab="system" aria-selected="false">System <small>internal</small></button>
+    </div>
+  </div>
+
+  <!-- ===================== TEAM ERRORS ===================== -->
+  <section id="tab-team" class="tabpane" style="display:grid;gap:22px">
+    <div class="bar">
+      <div class="grp"><label for="rep">Rep</label><select id="rep"></select><button class="clear" id="clear" type="button" hidden>Show all reps</button></div>
+      <div class="grp"><span class="lbl">Period</span>
+        <div class="seg" id="seg">
+          <button type="button" data-p="yday" aria-pressed="false">Yesterday</button>
+          <button type="button" data-p="7d" aria-pressed="false">Last 7 days</button>
+          <button type="button" data-p="mtd" aria-pressed="true">Month to date</button>
+        </div>
+        <span class="range" id="range"></span>
+      </div>
+    </div>
+
+    <section class="block">
+      <div class="block-h"><h2 id="sum-title"></h2><span class="who" id="sum-who"></span></div>
+      <div class="tiles" id="sum-tiles"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-h"><h2>Checks</h2>
+        <button class="i" type="button" aria-label="How to read" data-tip="Each check is an error that should never happen, so every target is 0. Out of = the moves or calls the check looked at. Moves made by automation (the dialer's 3-attempt rollover, the first-miss move to Call not connected, routing) never count against a rep; a move triggered by a rep's own dialer disposition counts for that rep. Open a check to see the deals.">i</button></div>
+      <div class="scroll"><table id="t-checks"></table></div>
+    </section>
+
+    <section class="block" id="reps-block">
+      <div class="block-h"><h2>By rep</h2>
+        <button class="i" type="button" aria-label="How to use" data-tip="Errors per rep for each check. Click a column to sort; click a rep to filter the whole page to them.">i</button></div>
+      <div class="scroll"><table id="t-reps"></table></div>
+    </section>
+  </section>
+
+  <!-- ===================== SYSTEM ===================== -->
+  <section id="tab-system" class="tabpane" hidden style="display:grid;gap:22px">
+    <section class="block">
+      <div class="block-h"><h2>Connect rate per caller ID</h2>
+        <span class="basis now" id="did-basis" data-tip="From the live call feed (a minute or two behind).">Live</span>
+        <button class="i" type="button" aria-label="What this shows" data-tip="Share of outbound calls answered, per number we call from. A number well below the others may be marked as spam by phone networks. Flagged: 100+ calls and 8 or more points below the median for the period.">i</button>
+        <div class="seg" id="seg-did" style="margin-left:auto">
+          <button type="button" data-p="yday" aria-pressed="false">Yesterday</button>
+          <button type="button" data-p="7d" aria-pressed="false">Last 7 days</button>
+          <button type="button" data-p="mtd" aria-pressed="true">Month to date</button>
+        </div>
+      </div>
+      <div class="scroll"><table id="t-dids"></table></div>
+    </section>
+
+    <section class="block">
+      <div class="block-h"><h2>Pipeline and dialer checks</h2>
+        <span class="basis now" id="sys-basis" data-tip="Open-now checks are computed when the page loads. Last-7-days checks cover full days, rebuilt nightly from the CRM's own history and Acefone's call records.">Live</span>
+        <button class="i" type="button" aria-label="What this shows" data-tip="Problems in the dialer, the CRM sync and our data feeds. For us to fix, not the team.">i</button></div>
+      <div class="scroll"><table id="t-sys"></table></div>
+    </section>
+  </section>
+
+  <div class="err-box" id="err" hidden></div>
+  <footer id="foot">Regional reps are left out. Moves made by automation never count against a rep.</footer>
+</main>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="api.js"></script>
+<script>
+// Live data: team-dashboard?view=diag (team errors, rebuilt nightly) and
+// ?view=system (live checks + caller-ID connect rates).
+const CHECKS = [
+  { k: "closed_early", name: "Closed out before 3 attempts", owner: "Telecaller", basis: "made", of: "No-response moves",
+    tip: "A person moved the lead to No response with fewer than 3 outbound calls since it arrived. The dialer would have kept trying; the lead was given up early." },
+  { k: "no_conv", name: "Concluded without a recorded conversation", owner: "Telecaller", basis: "made", of: "Not interested / Irrelevant moves",
+    tip: "Moved to Not interested or Irrelevant with no answered call to the lead, and no call or note logged in the CRM. If the conversation happened on WhatsApp, log it as a note. For dialer dispositions, credited to the agent of the last call." },
+  { k: "not_rec", name: "Conversation not recorded", owner: "Telecaller", basis: "made", of: "Connected calls of 1 min+",
+    tip: "A call of a minute or more marked Connected in the dialer, with no stage change in the CRM afterwards. The lead drifts and is redialled." },
+  { k: "wrong_disp", name: "“Call not connected” on a real conversation", owner: "Telecaller", basis: "made", of: "Call not connected dispositions",
+    tip: "Disposition set to Call not connected although the call had 30 seconds or more of talk time." },
+  { k: "cb_sched", name: "Callback not scheduled in the dialer", owner: "Telecaller", basis: "made", of: "callback requests",
+    tip: "Lead moved to Callback requested, but no callback was scheduled in the dialer, so nothing rings at the time the customer asked for. Starts counting from the day reps begin scheduling callbacks." },
+  { k: "inbound", name: "Missed inbound call not returned in 24 hours", owner: "Lead owner", basis: "made", of: "missed inbound callers",
+    tip: "The lead called us, nobody answered, and nobody called back (or answered a later call from them) within 24 hours. One per number per day. Credited to the lead's owner at the time of the call. Calls less than 24 hours old aren't judged yet." },
+  { k: "handoff", name: "Demo hand-off later than 1 hour", owner: "Telecaller or manager", basis: "made", of: "demos arranged",
+    tip: "Demo arranged, but within 1 hour the deal was not reassigned to anyone other than the person who arranged it." },
+  { k: "reason", name: "Cold or missed sale without a reason", owner: "Whoever moved the deal", basis: "made", of: "Cold and Missed-sale moves by a person",
+    tip: "A person moved the deal to Cold (without demo) or Missed sales with no reason recorded. Moves the dialer makes after a Not interested disposition are left out until the integration writes the reason itself." },
+  { k: "stale_quote", name: "Quotation sent, no update", owner: "Lead owner", basis: "now", of: "quotations open",
+    tip: "Still in Quotation sent with no stage change for more than the set number of days. Whatever the customer said, on a call or WhatsApp, the stage should move." },
+];
+const SHORT = { closed_early: "Closed early", no_conv: "No conversation", not_rec: "Not recorded", wrong_disp: "Wrong disposition", cb_sched: "Callback not scheduled",
+                inbound: "Inbound not returned", handoff: "Late hand-off", reason: "No reason", stale_quote: "Stale quotation" };
+
+const $ = (id) => document.getElementById(id);
+const fInt = (x) => Math.round(x).toLocaleString("en-IN");
+const fPct = (x) => (x * 100).toFixed(1) + "%";
+const yday = dash.addDays(dash.istToday(), -1);
+const PERIODS = { yday: [yday, yday], "7d": [dash.addDays(yday, -6), yday], mtd: [yday.slice(0, 8) + "01", yday] };
+const st = { tab: "team", rep: "", period: "mtd", didPeriod: "mtd", open: new Set(), sort: { k: "total", dir: -1 } };
+let TEAM = null, SYSD = null, reqT = 0, reqS = 0;
+
+const istTime = (iso) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const fTalk = (s) => `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+const DETAIL = {
+  closed_early: (d) => `Moved to No response after ${d.calls} call${d.calls === 1 ? "" : "s"}`,
+  no_conv: (d) => `Moved to ${d.to === 73 ? "Cold (not interested)" : "Irrelevant"} · no answered call, no call or note logged`,
+  not_rec: (d) => `${fTalk(d.talk_s)} call marked Connected · no stage change since`,
+  wrong_disp: (d) => `Call not connected · ${d.talk_s}s of talk`,
+  inbound: () => `Missed inbound · not returned within 24 hours`,
+  handoff: () => `Not reassigned within 1 hour of Demo arranged`,
+  reason: (d) => `${d.to === 73 ? "Cold (without demo)" : "Missed sales"} · reason blank`,
+  stale_quote: () => `In Quotation sent · no stage change since`,
+};
+
+function checksFor(rep) {
+  const C = (TEAM && TEAM.team.checks) || {};
+  return CHECKS.map((c) => {
+    const by = (C[c.k] && C[c.k].by_rep) || {};
+    const reps = rep ? [rep] : Object.keys(by);
+    const n = reps.reduce((s, r) => s + ((by[r] || [0, 0])[0]), 0), of = reps.reduce((s, r) => s + ((by[r] || [0, 0])[1]), 0);
+    const off = c.k === "cb_sched" && !TEAM.callback_scheduling_start;
+    return { ...c, ofLabel: c.of, n, of, off, name: c.k === "stale_quote" ? `${c.name} for ${TEAM.quote_stale_days} days` : c.name };
+  });
+}
+function repsList() {
+  const set = new Set(TEAM.roster);
+  for (const c of Object.values(TEAM.team.checks)) for (const [r, [e]] of Object.entries(c.by_rep)) if (e > 0) set.add(r);
+  return [...set].sort((a, b) => (TEAM.roster.includes(b) - TEAM.roster.includes(a)) || a.localeCompare(b));
+}
+
+// ---------------- team errors ----------------
+function renderTeam() {
+  if (!TEAM) return;
+  const [from, to] = PERIODS[st.period];
+  $("range").textContent = dash.range(from, to);
+  document.querySelectorAll("#seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.p === st.period)));
+  const REPS = repsList();
+  $("rep").innerHTML = `<option value="">All reps</option>` + REPS.map((r) => `<option>${dash.esc(r)}</option>`).join("");
+  $("clear").hidden = !st.rep;
+  $("rep").value = st.rep;
+
+  const C = checksFor(st.rep).filter((c) => !c.off), total = C.reduce((s, c) => s + c.n, 0);
+  const worst = C.filter((c) => c.of > 0).slice().sort((a, b) => b.n / b.of - a.n / a.of)[0];
+  const top = C.slice().sort((a, b) => b.n - a.n)[0];
+  const upTo = TEAM.team.complete_up_to;
+  $("sum-title").textContent = st.rep ? `${st.rep}'s errors` : "Team errors";
+  $("sum-who").innerHTML = `${dash.range(from, to)}${st.rep ? "" : ` · ${TEAM.roster.length} calling reps`} · <span class="basis now" data-tip="Team errors are rebuilt every night after midnight, because they need the CRM's record of who moved each lead. Stale quotations are the state right now.">Updated nightly${upTo ? ` · up to the end of ${dash.dm(upTo)}` : ""}</span>`;
+  $("sum-tiles").innerHTML =
+    `<div class="tile"><div class="tile-l">Errors made</div><div class="v">${fInt(total)}</div><div class="sub">across ${C.filter((c) => c.n > 0).length} of ${C.length} checks</div></div>` +
+    (top && top.n ? `<div class="tile"><div class="tile-l">Most frequent</div><div class="v" style="font-size:20px;line-height:1.3">${top.name}</div><div class="sub"><b>${fInt(top.n)}</b> errors</div></div>` : "") +
+    (worst && worst.n ? `<div class="tile"><div class="tile-l">Highest rate</div><div class="v" style="font-size:20px;line-height:1.3">${worst.name}</div><div class="sub"><b>${fPct(worst.n / worst.of)}</b> of ${fInt(worst.of)} ${worst.ofLabel}</div></div>` : "");
+
+  let html = `<thead><tr><th>Check</th><th>Errors</th><th>Out of</th><th>Rate</th><th>Target</th><th></th></tr></thead><tbody>`;
+  for (const c of checksFor(st.rep)) {
+    const rate = c.of ? c.n / c.of : 0, open = st.open.has(c.k);
+    html += `<tr><td><span class="chk">${c.name} <button class="i" type="button" aria-label="Definition" data-tip="${dash.esc(c.tip)}">i</button></span>` +
+      `<span class="basis${c.basis === "now" ? " now" : ""}" data-tip="${c.basis === "now" ? "Open now: the state right now, whatever the period." : "Made on these days: errors made in the selected period."}">${c.basis === "now" ? "Open now" : "Made on these days"}</span>` +
+      `<span class="owner">${c.owner}</span></td>`;
+    if (c.off) { html += `<td class="zero">—</td><td>—</td><td>—</td><td>0</td><td><span class="pill warn">Starts when reps schedule callbacks</span></td></tr>`; continue; }
+    html += `<td class="${c.n ? "hot" : "zero"}">${fInt(c.n)}</td><td>${fInt(c.of)}<span class="owner">${c.ofLabel}</span></td>` +
+      `<td>${c.of ? fPct(rate) : "—"}</td><td>0</td>` +
+      `<td>${c.n ? `<button class="view" type="button" data-check="${c.k}" aria-expanded="${open}">${open ? "Hide deals ▴" : "View deals ▾"}</button>` : `<span class="pill ok">Clear</span>`}</td></tr>`;
+    if (open && c.n) {
+      const all = ((TEAM.team.checks[c.k] || {}).deals || []).filter((d) => !st.rep || d[2] === st.rep);
+      const shown = all.slice(0, st.rep ? 50 : 24);
+      html += `<tr class="deals"><td colspan="6"><div class="deals-in"><table><thead><tr><th>Deal</th>${st.rep ? "" : "<th>Rep</th>"}<th>When</th><th style="text-align:left;padding-left:18px">What happened</th></tr></thead><tbody>` +
+        shown.map(([id, at, rep, det]) => `<tr><td>#${id ?? "—"}</td>${st.rep ? "" : `<td>${dash.esc(rep)}</td>`}<td>${at ? istTime(at) : "—"}</td>` +
+          `<td style="text-align:left;white-space:normal;padding-left:18px">${dash.esc(DETAIL[c.k](det || {}))}${c.k === "stale_quote" && at ? " " + dash.dm(new Date(Date.parse(at) + 330 * 60000).toISOString().slice(0, 10)) : ""}</td></tr>`).join("") +
+        `</tbody></table>${c.n > shown.length ? `<p class="more">Showing ${shown.length} of ${fInt(c.n)}, newest first.</p>` : ""}</div></td></tr>`;
+    }
+  }
+  $("t-checks").innerHTML = html + `</tbody>`;
+  $("t-checks").querySelectorAll(".view").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.check; st.open.has(k) ? st.open.delete(k) : st.open.add(k); renderTeam();
+  }));
+
+  $("reps-block").hidden = !!st.rep;
+  if (!st.rep) {
+    const ACTIVE = CHECKS.filter((c) => !(c.k === "cb_sched" && !TEAM.callback_scheduling_start));
+    const rows = REPS.map((r) => { const c = checksFor(r); const o = { rep: r, total: 0 }; c.forEach((x) => { if (!x.off) { o[x.k] = x.n; o.total += x.n; } }); return o; });
+    const { k, dir } = st.sort;
+    rows.sort((a, b) => (typeof a[k] === "string" ? a[k].localeCompare(b[k]) : (a[k] ?? 0) - (b[k] ?? 0)) * dir);
+    const cols = [["rep", "Rep"], ...ACTIVE.map((c) => [c.k, SHORT[c.k]]), ["total", "Total"]];
+    const max = Object.fromEntries(ACTIVE.map((c) => [c.k, Math.max(0, ...rows.map((r) => r[c.k] ?? 0))]));
+    $("t-reps").innerHTML = `<thead><tr>${cols.map(([ck, l]) => `<th class="sort" data-k="${ck}"${k === ck ? ` aria-sort="${dir > 0 ? "ascending" : "descending"}"` : ""}>${l}</th>`).join("")}</tr></thead><tbody>` +
+      rows.map((r) => `<tr class="click" data-rep="${dash.esc(r.rep)}" tabindex="0">${cols.map(([ck]) => {
+        const v = r[ck] ?? 0;
+        if (ck === "rep") return `<td style="font-weight:500">${dash.esc(v)}</td>`;
+        if (ck === "total") return `<td style="font-weight:600">${fInt(v)}</td>`;
+        return `<td class="${v === 0 ? "zero" : v === max[ck] ? "hot" : ""}">${fInt(v)}</td>`;
+      }).join("")}</tr>`).join("") + `</tbody>`;
+    $("t-reps").querySelectorAll("th.sort").forEach((th) => th.addEventListener("click", () => {
+      const nk = th.dataset.k; st.sort = { k: nk, dir: st.sort.k === nk ? -st.sort.dir : (nk === "rep" ? 1 : -1) }; renderTeam();
+    }));
+    $("t-reps").querySelectorAll("tr.click").forEach((tr) => {
+      const go = () => { st.rep = tr.dataset.rep; st.open.clear(); renderTeam(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+      tr.addEventListener("click", go); tr.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+    });
+  }
+}
+
+// ---------------- system ----------------
+function renderSystem() {
+  if (!SYSD) return;
+  document.querySelectorAll("#seg-did button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.p === st.didPeriod)));
+  const D = SYSD.caller_ids, median = Number(D.median ?? 0);
+  const rows = D.rows.map(([n, att, ans]) => ({ n, att, ans, rate: att ? ans / att : 0 })).sort((a, b) => a.rate - b.rate);
+  $("t-dids").innerHTML = `<thead><tr><th>Number we call from</th><th>Calls</th><th>Answered</th><th>Connect rate</th><th>vs median (${fPct(median)})</th><th></th></tr></thead><tbody>` +
+    (rows.map((r) => {
+      const gap = (r.rate - median) * 100, flag = r.att >= 100 && gap <= -8;
+      return `<tr><td>…${dash.esc(r.n.slice(-4))} <span class="owner" style="display:inline">${dash.esc(r.n)}</span></td><td>${fInt(r.att)}</td><td>${fInt(r.ans)}</td><td>${fPct(r.rate)}</td>` +
+        `<td>${gap >= 0 ? "+" : "−"}${Math.abs(gap).toFixed(1)} pts</td><td>${flag ? `<span class="pill bad">Possible spam flag</span>` : r.att < 100 ? `<span class="pill warn">Too few calls</span>` : `<span class="pill ok">OK</span>`}</td></tr>`;
+    }).join("") || `<tr><td colspan="6">No calls in this period.</td></tr>`) + `</tbody>`;
+
+  const K = SYSD.checks, W = K.week || {}, J = K.jobs || {};
+  const wk = (k) => W[k] || [0, 0];
+  const late = [];
+  if (J.snapshot_as_of && J.snapshot_as_of < yday) late.push(`funnel snapshot last built for ${dash.dm(J.snapshot_as_of)}`);
+  if (J.crm_history_until && Date.now() - Date.parse(J.crm_history_until) > 30 * 3600e3) late.push(`CRM history last loaded ${istTime(J.crm_history_until)}`);
+  for (const [name, at, msg] of J.failed_24h || []) late.push(`${name} failed at ${istTime(at)}${msg ? ` (${msg})` : ""}`);
+  const SYS = [
+    { name: "Leads never pushed to the dialer", basis: "now", n: K.never_pushed, tip: "Payroll leads from the last 30 days, in a dialable stage, never added to a dialer list and never called. Leads created straight into a demo stage, referral-campaign leads and regional reps' leads are left out." },
+    { name: "Leads past their attempt limit", basis: "now", n: K.past_limit_cnc + K.past_limit_cb, tip: `On the dialer with the attempt limit used up: ${fInt(K.past_limit_cnc)} in Call not connected (3+ missed attempts this round), ${fInt(K.past_limit_cb)} in Callback requested (2+ missed callbacks). The dialer should have moved them to No response.` },
+    { name: "Dialer and CRM out of step", basis: "now", n: K.off_dialer + K.concluded_on_dialer, tip: `In a dialable stage but on no dialer list (${fInt(K.off_dialer)}: nothing will call them), or in a closed stage but still on a dialer list (${fInt(K.concluded_on_dialer)}). Regional reps' leads are left out.` },
+    { name: "CRM stage mirror out of step", basis: "now", n: K.stage_drift ? K.stage_drift.drift : null, tip: K.stage_drift ? `Last drift check ${istTime(K.stage_drift.at)}: ${fInt(K.stage_drift.drift)} of ${fInt(K.stage_drift.checked)} leads had a different stage in our mirror than in the CRM.` : "The drift check hasn't run yet." },
+    { name: "Dispositions not reaching the CRM within 10 minutes", basis: "7d", w: wk("disp_missing"), tip: "A dialer disposition (Not interested, Irrelevant, Callback) with no matching stage move in the CRM's own log within 10 minutes. A lead already in that stage (a repeat Callback) passes." },
+    { name: "Calls to leads already concluded", basis: "7d", w: wk("calls_to_concluded"), tip: "Outbound calls to leads that were already in Not interested, Irrelevant or No response at the time of the call: wasted dials." },
+    { name: "Calls missing from our call feed", basis: "7d", w: wk("calls_missing_feed"), warn: true, tip: "Calls in Acefone's call records that never arrived in our webhook feed." },
+    { name: "CRM stage changes missing from the event feed", basis: "7d", w: wk("crm_moves_missing"), warn: true, tip: "Payroll stage changes in the CRM's own log with no matching webhook event within 2 minutes." },
+    { name: "Nightly jobs late or failed", basis: "now", n: late.length, tip: late.length ? late.join("\n") : `Funnel snapshot built for ${J.snapshot_as_of ? dash.dm(J.snapshot_as_of) : "–"}; CRM history loaded to ${J.crm_history_until ? istTime(J.crm_history_until) : "–"}; calls received to ${J.calls_until ? istTime(J.calls_until) : "–"}.` },
+    { name: "Payroll stages our jobs don't know", basis: "now", n: (K.unknown_stages || []).length, tip: (K.unknown_stages || []).length ? `New in the CRM: ${(K.unknown_stages || []).map(([id, nm]) => `${nm} (${id})`).join(", ")}. Add them to the dashboard's stage lists.` : "Every payroll stage is mapped." },
+    { name: "Phone numbers with two or more open deals", basis: "now", n: K.multi_open_phones, warn: true, tip: "This month's and last month's leads: the same customer phone on more than one open payroll deal, so calls and outcomes get shared between them." },
+  ];
+  $("t-sys").innerHTML = `<thead><tr><th>Check</th><th>Count</th><th>Out of</th><th></th></tr></thead><tbody>` +
+    SYS.map((s) => {
+      const n = s.basis === "7d" ? s.w[0] : s.n, of = s.basis === "7d" ? s.w[1] : null;
+      const stt = n == null ? "warn" : n === 0 ? "ok" : s.warn ? "warn" : "bad";
+      return `<tr><td><span class="chk">${s.name} <button class="i" type="button" aria-label="Definition" data-tip="${dash.esc(s.tip)}">i</button></span>` +
+        `<span class="basis${s.basis === "now" ? " now" : ""}">${s.basis === "now" ? "Open now" : "Last 7 full days"}</span></td>` +
+        `<td class="${n ? "hot" : "zero"}">${n == null ? "–" : fInt(n)}</td><td>${of == null ? "—" : fInt(of)}</td>` +
+        `<td><span class="pill ${stt}">${stt === "ok" ? "OK" : stt === "warn" ? "Watch" : "Fix"}</span></td></tr>`;
+    }).join("") + `</tbody>`;
+  const at = new Date(SYSD.generated_at).toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });
+  $("did-basis").textContent = `Live · ${at} IST`; $("sys-basis").textContent = `Live · ${at} IST`;
+}
+
+// ---------------- loading ----------------
+function showErr(e) { $("err").hidden = false; $("err").textContent = `Couldn't load the data (${e.message}). Pick the period again to retry.`; }
+async function loadTeam() {
+  const [from, to] = PERIODS[st.period], mine = ++reqT;
+  $("tab-team").classList.add("loading");
+  try { const d = await dash.load({ view: "diag", from, to }); if (mine === reqT) { TEAM = d; $("err").hidden = true; renderTeam(); } }
+  catch (e) { if (mine === reqT) showErr(e); }
+  finally { if (mine === reqT) $("tab-team").classList.remove("loading"); }
+}
+async function loadSystem() {
+  const [from, to] = PERIODS[st.didPeriod], mine = ++reqS;
+  $("tab-system").classList.add("loading");
+  try { const d = await dash.load({ view: "system", from, to }); if (mine === reqS) { SYSD = d; renderSystem(); } }
+  catch (e) { if (mine === reqS) showErr(e); }
+  finally { if (mine === reqS) $("tab-system").classList.remove("loading"); }
+}
+$("rep").addEventListener("change", (e) => { st.rep = e.target.value; st.open.clear(); renderTeam(); });
+$("clear").addEventListener("click", () => { st.rep = ""; st.open.clear(); renderTeam(); });
+document.querySelectorAll("#seg button").forEach((b) => b.addEventListener("click", () => { st.period = b.dataset.p; st.open.clear(); loadTeam(); }));
+document.querySelectorAll("#seg-did button").forEach((b) => b.addEventListener("click", () => { st.didPeriod = b.dataset.p; loadSystem(); }));
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+  st.tab = b.dataset.tab;
+  document.querySelectorAll(".tabs button").forEach((x) => x.setAttribute("aria-selected", String(x.dataset.tab === st.tab)));
+  $("tab-team").hidden = st.tab !== "team"; $("tab-system").hidden = st.tab !== "system";
+  if (st.tab === "system" && !SYSD) loadSystem();
+}));
+dash.tooltips();
+loadTeam();
+</script>
+</body>
+</html>

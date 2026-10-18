@@ -1,432 +1,317 @@
-<!DOCTYPE html>
-<!-- Team dashboard page. Hosted on GitHub Pages: Supabase serves NO web pages
-     on the shared *.supabase.co domain — the gateway force-rewrites HTML to
-     text/plain everywhere (edge functions AND storage, anti-phishing), so the
-     page lives off-platform and fetches the team-dashboard function's JSON
-     (see supabase/functions/team-dashboard/index.ts). Contains no secrets —
-     auth is enforced server-side by that function.
-
-     Deploy after edits: copy this file as index.html into the
-     github.com/shaivaldesai-cmd/team-dashboard repo and push (gh CLI is
-     authed on Shaival's machine); Pages redeploys automatically.
-
-     Team URL:
-       https://shaivaldesai-cmd.github.io/team-dashboard/
-     Sign in with dashboard.user / dashboard.pass (app_settings), or append
-     #key=<dashboard.secret> for a no-login link (the fragment never reaches
-     any server; it is stashed in localStorage on first load). -->
-<html lang="en"><head>
+<!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payroll Sales · Home</title>
 <meta name="robots" content="noindex">
-<title>Petpooja Leads — Team Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
 <style>
   :root {
-    color-scheme: light;
-    --surface: #fcfcfb; --card: #ffffff; --border: #e4e3df;
-    --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #8a897f;
-    --accent: #2a78d6; --accent-dim: #9dc2ec; --err: #e34948;
+    --ink: #0b0d12; --ink-2: #3d4350; --ink-3: #7a8190;
+    --line: #e7e9ee; --line-2: #f2f3f6; --panel: #fafbfc;
+    --accent: #2457e6; --accent-2: #edf2ff;
+    --good: #12805c; --bad: #c2352b;
+    --radius: 14px;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      color-scheme: dark;
-      --surface: #1a1a19; --card: #232322; --border: #3a3936;
-      --ink: #ffffff; --ink-2: #c3c2b7; --ink-3: #8a897f;
-      --accent: #3987e5; --accent-dim: #2c517e; --err: #e66767;
-    }
-  }
-  * { box-sizing: border-box; margin: 0; }
-  body { background: var(--surface); color: var(--ink);
-         font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px; }
-  .wrap { max-width: 880px; margin: 0 auto; display: grid; gap: 20px; }
-  header h1 { font-size: 19px; font-weight: 650; }
-  header .sub { color: var(--ink-3); font-size: 13px; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-  .tile { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
-  .tile .label { font-size: 12px; font-weight: 600; letter-spacing: .04em;
-                 text-transform: uppercase; color: var(--ink-3); }
-  .tile .value { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0; }
-  .tile .avg { font-size: 13px; color: var(--ink-2); }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
-  .card h2 { font-size: 15px; font-weight: 650; margin-bottom: 2px; }
-  .card .desc { font-size: 13px; color: var(--ink-2); margin-bottom: 12px; }
-  .tablewrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td { text-align: right; padding: 7px 12px; border-bottom: 1px solid var(--border);
-           white-space: nowrap; font-size: 14px; }
-  th:first-child, td:first-child { text-align: left; }
-  thead th { color: var(--ink-3); font-size: 12px; font-weight: 600;
-             letter-spacing: .04em; text-transform: uppercase; }
-  tbody tr:last-child td { border-bottom: none; }
-  tr.sla td, tr.total td { font-weight: 650; border-top: 2px solid var(--border); }
-  .num { color: var(--ink); }
-  .sub { color: var(--ink-3); font-size: 12.5px; }
-  .note { font-size: 12.5px; color: var(--ink-3); margin-top: 10px; }
-  footer { font-size: 12px; color: var(--ink-3); }
-  footer a { color: var(--accent); }
-  #chart svg { width: 100%; height: auto; display: block; }
-  #chart .bar { cursor: pointer; }
-  #agentTitle { font-size: 13px; font-weight: 650; margin: 12px 0 4px; }
-  #login { display: none; place-items: center; min-height: 70vh; }
-  #login form { display: grid; gap: 10px; width: 260px; padding: 24px;
-                background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
-  #login input { padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
-                 background: transparent; color: inherit; font: inherit; }
-  #login button { padding: 8px; border-radius: 6px; border: none; background: var(--accent);
-                  color: #fff; font-weight: 600; cursor: pointer; font: inherit; }
-  .err { color: var(--err); font-size: 13px; }
-  #app { display: none; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+               -webkit-font-smoothing: antialiased; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .top-in { max-width: 1200px; margin: 0 auto; padding: 0 28px; height: 60px; display: flex; align-items: center; gap: 28px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; }
+  .brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: inline-block; }
+  .brand span { color: var(--ink-3); font-weight: 500; }
+  nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  nav a { font-size: 13.5px; color: var(--ink-3); text-decoration: none; padding: 7px 11px; border-radius: 8px; white-space: nowrap; }
+  nav a.on { color: var(--ink); background: var(--line-2); font-weight: 500; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 28px 80px; display: grid; gap: 28px; }
+
+  .hero-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+  h1 { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-3); }
+  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; background: #fff; }
+  .toggle button { all: unset; cursor: pointer; font-size: 13px; padding: 5px 12px; border-radius: 6px; color: var(--ink-3); }
+  .toggle button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .changes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
+  .changes-l { font-size: 12.5px; color: var(--ink-3); margin-right: 2px; }
+  .chip { font-size: 12.5px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: default; }
+  .chip.now { border-color: #f0d9ab; background: #fffaf0; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .card { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 22px; }
+  .card-h { display: flex; align-items: center; gap: 8px; }
+  .team { font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+
+  .stars { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  #s-und-m { grid-column: 1 / -1; }
+  .star { padding: 16px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-2); display: grid; gap: 4px; }
+  .star-l { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink-2); font-weight: 500; }
+  .vals { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-top: 4px; }
+  .vals > div { display: grid; }
+  .cur { font-size: 40px; line-height: 1.05; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .prev { font-size: 28px; line-height: 1.05; font-weight: 500; letter-spacing: -.02em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .per { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .chg { font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .chg.good { color: var(--good); } .chg.bad { color: var(--bad); }
+  .chg small { color: var(--ink-3); font-weight: 400; font-size: 12.5px; }
+
+  .tbl-h { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 500; color: var(--ink-2); margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--line-2); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; white-space: normal; padding-left: 0; }
+  th:last-child, td:last-child { padding-right: 0; }
+  thead th { font-size: 12.5px; font-weight: 500; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+  tbody tr.main td:first-child { font-weight: 500; }
+  tbody tr.sub td { color: var(--ink-3); font-size: 13.5px; }
+  tbody tr.sub td:first-child { padding-left: 16px; }
+  tbody tr.total td { font-weight: 600; border-top: 1px solid var(--line); border-bottom: 0; }
+  td.c { font-weight: 500; }
+
+  footer { font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 16px; }
+
+  .i { width: 17px; height: 17px; border-radius: 50%; border: 1px solid #c9ced6; color: var(--ink-3); font: 600 10.5px/15px var(--sans);
+       display: inline-grid; place-items: center; cursor: help; background: #fff; padding: 0; flex: none; }
+  .i:hover, .i:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+  #tip { position: fixed; z-index: 50; pointer-events: none; max-width: 300px; background: var(--ink); color: #fff; font-size: 12.5px; line-height: 1.45;
+         padding: 9px 11px; border-radius: 9px; box-shadow: 0 8px 24px rgba(16,24,40,.18); opacity: 0; transition: opacity .12s; }
+  #tip.show { opacity: 1; }
+
+
+  #dash-login { position: fixed; inset: 0; z-index: 60; display: none; place-items: center; background: rgba(255,255,255,.96); }
+  #dash-login form { display: grid; gap: 10px; width: min(300px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--line);
+                     border-radius: var(--radius); background: #fff; box-shadow: 0 12px 32px rgba(16,24,40,.08); }
+  #dash-login input { font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; }
+  #dash-login input:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+  #dash-login button { font: inherit; padding: 9px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 500; cursor: pointer; }
+  #dash-login .err { margin: 0; color: var(--bad); font-size: 13px; }
+  .state { padding: 40px 0; color: var(--ink-3); font-size: 14px; }
+  .banner { border: 1px solid #f0d9ab; background: #fffaf0; color: var(--ink-2); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } h1 { font-size: 28px; } }
+  @media (max-width: 560px) { .top-in, main { padding-left: 16px; padding-right: 16px; } .cur { font-size: 34px; } .prev { font-size: 24px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
-</head><body>
+</head>
+<body>
 
-<div id="login"><form id="loginForm">
-  <b>Team Dashboard</b>
-  <div class="err" id="loginErr" hidden>Wrong username or password.</div>
-  <input id="u" placeholder="username" autocomplete="username">
-  <input id="p" type="password" placeholder="password" autocomplete="current-password">
-  <button type="submit">Open dashboard</button>
-</form></div>
-
-<div id="app"><div class="wrap">
-  <header>
-    <h1>Petpooja Leads — Team Dashboard</h1>
-    <nav style="display:flex;gap:14px;font-size:14px;margin:2px 0 4px"><a href="./" style="color:var(--ink);font-weight:650;text-decoration:none">Overview</a><a href="./telecallers.html" style="color:var(--ink-3);text-decoration:none">Telecallers</a><a href="./northstar.html" style="color:var(--ink-3);text-decoration:none">North Star</a><a href="./sales.html" style="color:var(--ink-3);text-decoration:none">Sales</a><a href="./funnel.html" style="color:var(--ink-3);text-decoration:none">Funnel</a></nav>
-    <div class="sub" id="asof"></div>
-  </header>
-
-  <div class="card">
-    <h2>Calls per day — last 7 days</h2>
-    <div class="desc">Every dial made or answered by a person: all outbound dials (the campaign
-      runs in Preview mode, so an agent initiates each one — answered or not) plus answered
-      inbound; voicebot excluded. The solid inner bar is the connected portion.
-      Tap a bar for that day's caller breakdown.</div>
-    <div id="chart"></div>
-    <div id="agentTitle"></div>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Caller</th><th>Total calls</th><th>Connected</th><th>Connected %</th><th>Talk time</th><th>Ring wait</th></tr></thead>
-      <tbody id="agentRows"></tbody>
-    </table></div>
-    <div class="note" id="chartNote"></div>
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><i></i>Petpooja <span>Payroll sales</span></div>
+    <nav aria-label="Pages">
+      <a href="index.html" class="on">Home</a>
+      <a href="calling.html">Calling</a>
+      <a href="diagnostics.html">Diagnostics</a>
+    </nav>
   </div>
+</header>
 
-  <div class="tiles">
-    <div class="tile">
-      <div class="label">Calls today</div>
-      <div class="value" id="t-calls">–</div>
-      <div class="avg" id="t-calls-src"></div>
+<main>
+  <div class="state" id="state">Loading…</div>
+  <div class="banner" id="stale" hidden></div>
+  <section id="hero" hidden>
+    <div class="hero-top">
+      <h1>North stars</h1>
+      <div class="meta">
+        <span id="periods"></span>
+        <button class="i" type="button" aria-label="How the months compare" data-tip="Leads created in each window, each as it stood at midnight after its last day (rebuilt from the CRM's stage history), so both months have had the same time to move. Rebuilt nightly at 03:15 IST.">i</button>
+        <div class="toggle" role="group" aria-label="Show as">
+          <button type="button" data-mode="n" aria-pressed="true">Numbers</button>
+          <button type="button" data-mode="p" aria-pressed="false">%</button>
+        </div>
+      </div>
     </div>
-    <div class="tile">
-      <div class="label">Answered today</div>
-      <div class="value" id="t-conn">–</div>
-      <div class="avg" id="t-conn-sub"></div>
-    </div>
-    <div class="tile">
-      <div class="label">Demos arranged today</div>
-      <div class="value" id="t-demos">–</div>
-      <div class="avg" id="t-demos-sub"></div>
-    </div>
-  </div>
+    <div class="changes" id="changes"><span class="changes-l">What changed</span></div>
+  </section>
 
-  <div class="card">
-    <h2>Demos arranged per telecaller</h2>
-    <div class="desc">Arranged = the CRM’s “Demo Arrange Date” (the scheduled demo date; stage entry
-      when blank). Done = the CRM’s “Demo Done Date” (or the deal reached Demo Shown or beyond).
-      Credited from the CRM’s “Demo Assigned By” field.</div>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Telecaller</th><th>Today</th><th>Arranged MTD</th><th>Done MTD</th><th>Done %</th><th>Demo conversion</th></tr></thead>
-      <tbody id="demoRows"></tbody>
-    </table></div>
-    <div class="note">“Done %” = share of this month’s arranged demos that actually happened.
-      “Demo conversion” = MTD arranged demos ÷ MTD connected calls — higher is more efficient
-      (call data since 11 Aug). “Demo team / other” = arranged by non-telecaller staff;
-      “Unattributed” = Demo Assigned By left blank in the CRM.</div>
-  </div>
+  <section class="grid" id="cards" hidden>
+    <article class="card">
+      <div class="card-h"><span class="team">Marketing</span>
+        <button class="i" type="button" aria-label="About" data-tip="Marketing owns how many relevant leads come in. Leads created in the period, by deal created date.">i</button></div>
+      <div class="stars">
+        <div class="star" id="s-rel"></div>
+        <div class="star" id="s-qual"></div>
+        <div class="star" id="s-und-m"></div>
+      </div>
+      <div>
+        <div class="tbl-h">Where the month's leads ended up
+          <button class="i" type="button" aria-label="How this is split" data-tip="Every lead counted once, by the stage it was in at the snapshot. A lead that had a demo arranged stays relevant even if it fell back, so the rows below leave those leads out.">i</button></div>
+        <table id="t-mkt"></table>
+      </div>
+    </article>
 
-  <div class="card">
-    <h2>Missed inbound calls — are we calling back?</h2>
-    <div class="desc">Numbers that called us and got no answer, and whether we dialed them back
-      (same or next day) and reached them.</div>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Day</th><th>Missed numbers</th><th>Called back</th><th>Callback answered</th></tr></thead>
-      <tbody id="cbRows"></tbody>
-    </table></div>
-    <div class="note">A number counts as “called back” when any outbound dial went to it the
-      same or next day. Same-day ordering is approximate.</div>
-  </div>
-
-  <div class="card">
-    <h2 id="fcTitle">First-call speed — new leads in dialable hours</h2>
-    <div class="desc">Leads created 10:30–19:00 IST that were meant for the dialer, by time from creation to their first dial on any channel.
-      Target: every lead called within 10 minutes.</div>
-    <div class="tablewrap"><table>
-      <thead><tr>
-        <th>Time to first call</th><th id="h-today">Selected day</th>
-        <th id="h-yd">Day before</th><th id="h-avg">5-day avg</th>
-      </tr></thead>
-      <tbody id="rows"></tbody>
-    </table></div>
-    <div class="note">Counts every outbound dial to the lead — predictive dialer or manual,
-      connected or not (inbound calls never count as our outreach). Tracks
-      <b>outreach speed</b> on fresh leads.</div>
-  </div>
+    <article class="card">
+      <div class="card-h"><span class="team">Calling</span>
+        <button class="i" type="button" aria-label="About" data-tip="Calling owns every lead until it is disposed: handed to the demo team, handed to a payroll field team, or concluded as Not interested, Irrelevant or No response. Same leads as the marketing card.">i</button></div>
+      <div class="stars">
+        <div class="star" id="s-und"></div>
+        <div class="star" id="s-conv"></div>
+      </div>
+      <div>
+        <div class="tbl-h">Where the month's leads are, by stage
+          <button class="i" type="button" aria-label="How this is split" data-tip="The period's leads by the stage they were in at the snapshot. Leads that had a demo arranged and fell back count under With calling, because calling has to dispose of them again.">i</button></div>
+        <table id="t-call"></table>
+      </div>
+    </article>
+  </section>
 
   <footer id="foot"></footer>
-</div></div>
+</main>
 
+<div id="tip" role="tooltip"></div>
+
+<script src="api.js"></script>
 <script>
-const API = "https://xuerxrbtofhxdwxglynr.supabase.co/functions/v1/team-dashboard";
-const LS = "petpooja_dash_creds";
+// Live data: team-dashboard?view=home -> the newest nightly funnel snapshot
+// (each month as it stood at midnight after its last day) and its partitions
+// from private.home_summary. Arrays are [previous, current].
+let D = null;
 
-function creds() {
-  const h = new URLSearchParams(location.hash.slice(1));
-  if (h.get("key")) {
-    localStorage.setItem(LS, JSON.stringify({ key: h.get("key") }));
-    history.replaceState(null, "", location.pathname + location.search);
-  }
-  try { return JSON.parse(localStorage.getItem(LS)) || null; } catch { return null; }
-}
+// Context chips, shown when their dates overlap either window (edit by hand).
+// [from, to, label, text]
+const CHANGES = [
+  ["2026-08-21", "2026-09-25", "Dialer · 21 Aug – 25 Sep", "Attempt limit not enforced: leads were redialled beyond policy and rarely rolled over to No response."],
+  ["2026-09-25", "2026-09-25", "Dialer · 25 Sep", "Attempt-limit fix shipped: 3 missed attempts, then No response."],
+  ["2026-10-01", "2026-10-14", "Team · 1–14 Oct", "Reps moved 783 leads to No response by hand in 1–14 Oct, against 226 in 1–14 Sep."],
+  ["2026-10-01", "2026-10-31", "Lead sources · Oct", "The source lead_ad stopped appearing; its leads now arrive as Paid Social."],
+  ["2026-10-01", "2026-10-31", "Team · Oct", "Six reps were active for the first time."],
+  ["2026-10-02", "2026-10-02", "Calendar · 2 Oct", "Gandhi Jayanti."],
+  ["2026-10-12", "2026-10-13", "Dialer · 12–13 Oct", "Push outage: new leads were not sent to the dialer for about 15 hours."],
+  ["2026-10-16", "2026-10-16", "Dialer · 16 Oct", "Warm-list retirement: about 4,000 open leads moved to No response in one automated run."],
+];
 
-function show(id) {
-  document.getElementById("login").style.display = id === "login" ? "grid" : "none";
-  document.getElementById("app").style.display = id === "app" ? "block" : "none";
-}
-
-async function load(fromLogin) {
-  const c = creds();
-  if (!c) { show("login"); return; }
-  const q = c.key ? `key=${encodeURIComponent(c.key)}`
-                  : `user=${encodeURIComponent(c.user)}&pass=${encodeURIComponent(c.pass)}`;
-  let data = null;
-  try { data = await (await fetch(`${API}?${q}`)).json(); } catch { /* network */ }
-  if (!data || !data.ok) {
-    localStorage.removeItem(LS);
-    document.getElementById("loginErr").hidden = !fromLogin;
-    show("login");
-    return;
-  }
-  render(data);
-  show("app");
-}
-
-const N = (x) => x == null ? null : Number(x);
-const pct = (n, of) => of ? `${Math.round((n / of) * 1000) / 10}%` : "–";
-const cell = (n, of) => `<span class="num">${n}</span> <span class="sub">(${pct(n, of)})</span>`;
-const avgCell = (p) => p == null ? `<span class="sub">–</span>` : `<span class="num">${p}%</span>`;
-const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const istDayLabel = (iso) =>
-  new Date(iso + "T00:00:00+05:30").toLocaleDateString("en-IN",
-    { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric" });
-
-let state = { days: [], agentsByDay: {}, selected: null };
-
-function buildDays(d) {
-  // Fill a continuous 7-day window ending today (IST) so no-dial days show as 0.
-  const todayIst = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const day = new Date(Date.parse(todayIst + "T00:00:00Z") - i * 86400000).toISOString().slice(0, 10);
-    days.push({ day, calls: 0, connected: 0 });
-  }
-  const byDay = Object.fromEntries(days.map((x) => [x.day, x]));
-  state.agentsByDay = {};
-  for (const r of d.agent_daily || []) {
-    if (byDay[r.day]) { byDay[r.day].calls += N(r.calls); byDay[r.day].connected += N(r.connected); }
-    (state.agentsByDay[r.day] = state.agentsByDay[r.day] || []).push(r);
-  }
-  // Today comes LIVE from the webhook stream (merged with the CDR import),
-  // overriding the periodic rollup row.
-  const todayKey = days[6].day;
-  if ((d.live_today || []).length) {
-    byDay[todayKey].calls = 0; byDay[todayKey].connected = 0;
-    state.agentsByDay[todayKey] = d.live_today;
-    for (const r of d.live_today) {
-      byDay[todayKey].calls += N(r.calls);
-      byDay[todayKey].connected += N(r.connected);
-    }
-  }
-  state.days = days;
-  state.selected = days[6].day;
-}
-
-function drawChart() {
-  const W = 840, H = 205, PAD = 8, LBL = 34, TOP = 38;
-  const max = Math.max(1, ...state.days.map((d) => d.calls));
-  const bw = Math.floor((W - PAD * 2) / 7);
-  const parts = [];
-  state.days.forEach((d, i) => {
-    const x = PAD + i * bw;
-    const h = Math.round((d.calls / max) * (H - LBL - TOP));
-    const hc = Math.round((d.connected / max) * (H - LBL - TOP));
-    const y = H - LBL - h;
-    const yc = H - LBL - hc;
-    const sel = d.day === state.selected;
-    const connPct = d.calls ? Math.round((d.connected / d.calls) * 100) : 0;
-    parts.push(`<g class="bar" data-day="${d.day}">
-      <rect x="${x + 6}" y="${PAD}" width="${bw - 12}" height="${H - LBL - PAD}" fill="transparent"></rect>
-      <rect x="${x + 6}" y="${y}" width="${bw - 12}" height="${Math.max(h, 2)}" rx="4" fill="var(--accent-dim)"></rect>
-      <rect x="${x + 6}" y="${yc}" width="${bw - 12}" height="${Math.max(hc, 2)}" rx="4" fill="var(--accent)"></rect>
-      <text x="${x + bw / 2}" y="${y - 20}" text-anchor="middle" font-size="13" font-weight="600"
-            fill="var(--ink)">${d.calls}</text>
-      <text x="${x + bw / 2}" y="${y - 6}" text-anchor="middle" font-size="11"
-            fill="var(--ink-3)">${d.calls ? `${d.connected} conn (${connPct}%)` : ""}</text>
-      <text x="${x + bw / 2}" y="${H - LBL + 18}" text-anchor="middle" font-size="12"
-            fill="${sel ? "var(--ink)" : "var(--ink-3)"}" font-weight="${sel ? 650 : 400}">${istDayLabel(d.day)}</text>
-      ${sel ? `<rect x="${x + 6}" y="${H - LBL + 24}" width="${bw - 12}" height="3" rx="1.5" fill="var(--accent)"></rect>` : ""}
-    </g>`);
-  });
-  document.getElementById("chart").innerHTML =
-    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calls per day with connected portion, last 7 days">${parts.join("")}</svg>`;
-  document.querySelectorAll("#chart .bar").forEach((g) =>
-    g.addEventListener("click", () => { state.selected = g.dataset.day; drawChart(); drawAgents(); if (state.last) drawFirstCall(state.last); }));
-}
-
-function fmtTalkTotal(talkSeconds) {
-  const s = N(talkSeconds) || 0;
-  if (!s) return "–";
-  const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
-  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
-}
-
-function drawAgents() {
-  const rows = (state.agentsByDay[state.selected] || []).slice()
-    .sort((a, b) => N(b.calls) - N(a.calls));
-  const total = rows.reduce((s, r) => s + N(r.calls), 0);
-  const conn = rows.reduce((s, r) => s + N(r.connected), 0);
-  const talk = rows.reduce((s, r) => s + N(r.talk_seconds || 0), 0);
-  const ring = rows.reduce((s, r) => s + N(r.ring_seconds || 0), 0);
-  document.getElementById("agentTitle").textContent =
-    `Callers on ${istDayLabel(state.selected)} (${state.selected})`;
-  document.getElementById("agentRows").innerHTML = rows.length
-    ? rows.map((r) =>
-        `<tr><td>${esc(r.agent)}</td><td>${N(r.calls)}</td><td>${N(r.connected)}</td>` +
-        `<td>${pct(N(r.connected), N(r.calls))}</td>` +
-        `<td>${fmtTalkTotal(r.talk_seconds || 0)}</td>` +
-        `<td>${fmtTalkTotal(r.ring_seconds || 0)}</td></tr>`).join("") +
-      `<tr class="total"><td>Total (${rows.length} callers)</td><td>${total}</td><td>${conn}</td>` +
-      `<td>${pct(conn, total)}</td><td>${fmtTalkTotal(talk)}</td><td>${fmtTalkTotal(ring)}</td></tr>`
-    : `<tr><td colspan="6"><span class="sub">No calls recorded for this day yet.</span></td></tr>`;
-}
-
-// First-call speed table for the day selected on the chart (today = live,
-// earlier days = stored rollup), the day before it, and the 5-day average.
-// Counts every outbound channel (dialer + click-to-call) since 2026-09-10.
-function drawFirstCall(d) {
-  const todayKey = state.days[6].day;
-  const byDay = Object.fromEntries((d.daily_stats || []).map((r) => [r.day, r]));
-  byDay[todayKey] = d.today;
-  const sel = state.selected, prevKey = new Date(Date.parse(sel + "T00:00:00Z") - 86400000).toISOString().slice(0, 10);
-  const t = byDay[sel] || null, y = byDay[prevKey] || null, a = d.avg5;
-  const lbl = (k) => istDayLabel(k) + (k === todayKey ? " (today, live)" : "");
-  document.getElementById("fcTitle").textContent = `First-call speed — new leads on ${istDayLabel(sel)}, 10:30–19:00`;
-  document.getElementById("h-today").textContent = t ? `${lbl(sel)} (${t.in_window_leads} dialable)` : `${lbl(sel)} (–)`;
-  document.getElementById("h-yd").textContent = y ? `${lbl(prevKey)} (${y.in_window_leads} dialable)` : `${lbl(prevKey)} (–)`;
-  document.getElementById("h-avg").textContent = a ? `5-day avg (~${a.avg_in_window}/day)` : "5-day avg";
-  if (!t) {
-    document.getElementById("rows").innerHTML = `<tr><td colspan="4"><span class="sub">No stored data for this day.</span></td></tr>`;
-    return;
-  }
-  const w10t = N(t.called_1m) + N(t.called_1m_10m);
-  const w10y = y ? N(y.called_1m) + N(y.called_1m_10m) : 0;
-  const w10a = a && a.avg_pct_1m != null && a.avg_pct_1m_10m != null
-    ? Math.round((N(a.avg_pct_1m) + N(a.avg_pct_1m_10m)) * 10) / 10 : null;
-  const rows = [
-    ["≤ 1 minute",       t.called_1m,      y && y.called_1m,      N(a && a.avg_pct_1m)],
-    ["1 – 10 minutes",   t.called_1m_10m,  y && y.called_1m_10m,  N(a && a.avg_pct_1m_10m)],
-    ["10 min – 1 hour",  t.called_10m_1h,  y && y.called_10m_1h,  N(a && a.avg_pct_10m_1h)],
-    ["1 hour +",         t.called_over_1h, y && y.called_over_1h, N(a && a.avg_pct_over_1h)],
-    ["Not yet called",   t.uncalled,       y && y.uncalled,       N(a && a.avg_pct_uncalled)],
-    ["Called within 10 min", w10t,          y ? w10y : null,       w10a, "sla"],
-  ];
-  document.getElementById("rows").innerHTML = rows.map(([label, tv, yv, av, cls]) =>
-    `<tr${cls ? ` class="${cls}"` : ""}><td>${label}</td>` +
-    `<td>${cell(N(tv), N(t.in_window_leads))}</td>` +
-    `<td>${yv == null ? "–" : cell(N(yv), N(y.in_window_leads))}</td>` +
-    `<td>${avgCell(av)}</td></tr>`).join("") +
-    // Leads created straight into a demo/closed stage, or gated out
-    // (referral campaign): never meant for the dialer, shown for completeness,
-    // excluded from every percentage above.
-    `<tr><td><span class="sub">Not for the dialer (created in a demo/closed stage, or referral)</span></td>` +
-    `<td><span class="sub">${N(t.not_for_dialer)}</span></td><td><span class="sub">${y ? N(y.not_for_dialer) : "–"}</span></td>` +
-    `<td><span class="sub">${a && a.avg_not_for_dialer != null ? `~${N(a.avg_not_for_dialer)}/day` : "–"}</span></td></tr>`;
-}
-
-function render(d) {
-  document.getElementById("asof").textContent =
-    `Live as of ${new Date(d.generated_at).toLocaleString("en-IN",
-      { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST · refreshes every 5 min`;
-
-  state.last = d;
-  buildDays(d);
-  drawChart();
-  drawAgents();
-  document.getElementById("chartNote").textContent =
-    (d.live_today || []).length
-      ? "Today is LIVE from the call webhook stream (all call types — dialer, manual and click-to-call — report in real time). Source: Acefone call records."
-      : "Today's data is still being computed — check back in a few minutes.";
-
-  // Tiles — from the CDR-based agent table; fall back to dialer-only counts
-  // until today's first rollup lands.
-  const today = state.days[6];
-  const haveCdr = (state.agentsByDay[today.day] || []).length > 0;
-  const calls = haveCdr ? today.calls : N(d.today.total_calls);
-  const conn = haveCdr ? today.connected : N(d.today.connected_calls);
-  document.getElementById("t-calls").textContent = calls;
-  document.getElementById("t-calls-src").textContent =
-    haveCdr ? "all outbound (incl. manual)" : "dialer calls only (CDR pending)";
-  document.getElementById("t-conn").textContent = pct(conn, calls);
-  document.getElementById("t-conn-sub").textContent = `${conn} of ${calls} picked up`;
-
-  const demos = d.demos || [];
-  const demosToday = demos.reduce((s, r) => s + N(r.today), 0);
-  const demosMtd = demos.reduce((s, r) => s + N(r.mtd), 0);
-  document.getElementById("t-demos").textContent = demosToday;
-  document.getElementById("t-demos-sub").textContent =
-    `${demosMtd} arranged · ${demos.reduce((s, r) => s + N(r.done_mtd || 0), 0)} done this month`;
-  // % of MTD connected calls that produced a demo — higher is better.
-  const cpd = (r) => {
-    const c = N(r.connected_mtd || 0), m = N(r.mtd);
-    return (r.agent === "Unattributed" || !c || !m) ? "–" : `${Math.round((m / c) * 1000) / 10}%`;
+function build(d) {
+  const P = d.summary.previous || {}, C = d.summary.current || {};
+  const v = (sec, ks) => [P, C].map((o) => ks.reduce((s, k) => s + ((o[sec] || {})[k] || 0), 0));
+  const sub = (sec, name, ks) => [name, ...v(sec, ks)];
+  const per = d.periods;
+  return {
+    periods: { previous: dash.range(per.previous.first_day, per.previous.last_day), current: dash.range(per.current.first_day, per.current.last_day) },
+    windows: per,
+    total: [P.total || 0, C.total || 0],
+    mkt: [
+      { name: "Relevant", v: v("mkt", ["rel_demo", "rel_fellback", "rel_cold", "rel_quote", "rel_field"]),
+        sub: [sub("mkt", "Demo arranged or later", ["rel_demo"]), sub("mkt", "Demo arranged earlier, then fell back", ["rel_fellback"]),
+              sub("mkt", "Cold / not interested", ["rel_cold"]), sub("mkt", "Quotation sent", ["rel_quote"]),
+              sub("mkt", "Handed to a payroll field team", ["rel_field"])] },
+      { name: "Not relevant", v: v("mkt", ["irr", "nr"]), sub: [sub("mkt", "Irrelevant", ["irr"]), sub("mkt", "No response", ["nr"])] },
+      { name: "Not decided yet", tip: "Still with calling and never past a conversation: Inbound, Call not connected or Callback requested.",
+        v: v("mkt", ["und_inbound", "und_cnc", "und_cb"]),
+        sub: [sub("mkt", "Inbound", ["und_inbound"]), sub("mkt", "Call not connected", ["und_cnc"]), sub("mkt", "Callback requested", ["und_cb"])] },
+      { name: "Outside payroll", tip: "Moved to POS or to another pipeline: a lead for another product, not for payroll.", v: v("mkt", ["outside"]) },
+    ],
+    call: [
+      { name: "With calling (undisposed)", v: v("call", ["call_inbound", "call_cnc", "call_cb", "call_quote"]),
+        sub: [sub("call", "Inbound", ["call_inbound"]), sub("call", "Call not connected", ["call_cnc"]),
+              sub("call", "Callback requested", ["call_cb"]), sub("call", "Quotation sent", ["call_quote"])] },
+      { name: "Handed to demo team", v: v("call", ["demo_team"]) },
+      { name: "Handed to another team", tip: "A payroll field team, POS or another pipeline.", v: v("call", ["another_team"]) },
+      { name: "Concluded", tip: "Not interested, Irrelevant or No response at the snapshot.", v: v("call", ["concluded"]) },
+    ],
+    conv: { won: [P.won || 0, C.won || 0], concluded: [P.concluded || 0, C.concluded || 0] },
+    changes: CHANGES.filter(([a, b]) => [per.previous, per.current].some((w) => a <= w.last_day && b >= w.first_day))
+      .map(([a, b, label, text]) => [a <= per.current.last_day && b >= per.current.first_day, label, text]),
   };
-  const donePct = (r) => {
-    const m = N(r.mtd), d = N(r.done_mtd || 0);
-    return m ? `${Math.round((d / m) * 1000) / 10}%` : "–";
-  };
-  const demosDone = demos.reduce((s, r) => s + N(r.done_mtd || 0), 0);
-  const totDonePct = demosMtd ? `${Math.round((demosDone / demosMtd) * 1000) / 10}%` : "";
-  document.getElementById("demoRows").innerHTML = demos.length
-    ? demos.map((r) =>
-        `<tr><td>${esc(r.agent)}</td><td>${N(r.today)}</td><td>${N(r.mtd)}</td><td>${N(r.done_mtd || 0)}</td><td>${donePct(r)}</td><td>${cpd(r)}</td></tr>`).join("") +
-      `<tr class="total"><td>Total</td><td>${demosToday}</td><td>${demosMtd}</td><td>${demosDone}</td><td>${totDonePct}</td><td></td></tr>`
-    : `<tr><td colspan="6"><span class="sub">No demos recorded yet.</span></td></tr>`;
-
-  // Missed-inbound callback tracking.
-  const cbs = d.callbacks || [];
-  document.getElementById("cbRows").innerHTML = cbs.length
-    ? cbs.map((r) =>
-        `<tr><td>${istDayLabel(r.day)}</td><td>${N(r.missed_numbers)}</td>` +
-        `<td>${cell(N(r.called_back), N(r.missed_numbers))}</td>` +
-        `<td>${cell(N(r.callback_answered), N(r.missed_numbers))}</td></tr>`).join("")
-    : `<tr><td colspan="4"><span class="sub">No missed inbound calls recorded.</span></td></tr>`;
-
-  drawFirstCall(d);
-  const a = d.avg5;
-  document.getElementById("foot").innerHTML =
-    `First-call speed counts every outbound channel (dialer and click-to-call). Stored days are recomputed nightly for 7 days; today is live. ` +
-    `5-day averages cover the last five weekdays (Mon–Fri) with ≥ ${d.working_day_min} dialer calls — ` +
-    `currently ${a ? a.day_list.join(", ") : "–"}. Saturdays, Sundays and holidays are excluded. ` +
-    `Per-caller effort and quality: <a href="./telecallers.html">Telecallers</a>. Outcomes for the callers: <a href="./northstar.html">North Star</a>.`;
 }
 
-document.getElementById("loginForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  localStorage.setItem(LS, JSON.stringify({
-    user: document.getElementById("u").value.trim(),
-    pass: document.getElementById("p").value,
-  }));
-  load(true);
-});
+let mode = "n";
+const $ = (id) => document.getElementById(id);
+const fInt = (x) => x.toLocaleString("en-IN");
+const fPct = (x) => (x * 100).toFixed(1) + "%";
+const sgn = (x) => (x > 0 ? "+" : x < 0 ? "−" : "±");
+const fSigned = (x) => sgn(x) + fInt(Math.abs(x));
+const fPts = (x) => sgn(x) + Math.abs(x).toFixed(1) + " pts";
+const share = (x, i) => (D.total[i] ? x / D.total[i] : 0);
 
-load(false);
-setInterval(() => load(false), 5 * 60 * 1000);
+// north star: current big, previous a little smaller beside it, change below
+function star(id, label, tip, cur, prev, fmt, change, better) {
+  const good = change.value * better > 0;
+  $(id).innerHTML =
+    `<div class="star-l">${label} <button class="i" type="button" aria-label="Definition" data-tip="${tip}">i</button></div>` +
+    `<div class="vals"><div><span class="cur">${fmt(cur)}</span><span class="per">${D.periods.current}</span></div>` +
+    `<div><span class="prev">${fmt(prev)}</span><span class="per">${D.periods.previous}</span></div></div>` +
+    `<div class="chg ${good ? "good" : "bad"}">${change.text}${change.note ? ` <small>${change.note}</small>` : ""}</div>`;
+}
+
+const RELTIP = "Every lead except those in Inbound, Callback requested, Call not connected, No response or Irrelevant, or moved to POS or another pipeline. A lead that had a demo arranged counts even if it later fell back.";
+const NDTIP = "Leads still undisposed with calling, so their relevance isn't known yet: Inbound, Call not connected or Callback requested, as a share of all leads that came in. As calling decides them, relevant leads go up. Calling's undisposed count is slightly higher because it also includes Quotation sent and leads that fell back after a demo was arranged, which already count as relevant here.";
+const SHARETIP = "Relevant leads ÷ all leads that came in. Leads calling has not decided yet are in the total, so this rises as calling works through them; read it next to calling's undisposed leads.";
+const UNDTIP = "Leads still in a calling stage at the snapshot: Inbound, Call not connected, Callback requested or Quotation sent. Lower is better.";
+const CONVTIP = "Of the relevant leads calling has concluded (relevant leads minus those still in Quotation sent), the share with a demo arranged or closed. Not interested and hand-offs to a field team count as not converted. Counted per lead, not per call.";
+
+function render() {
+  for (const b of document.querySelectorAll("[data-mode]")) b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+  const [relP, relC] = D.mkt[0].v;
+  const [undP, undC] = D.call[0].v;
+  const convP = D.conv.concluded[0] ? D.conv.won[0] / D.conv.concluded[0] : 0, convC = D.conv.concluded[1] ? D.conv.won[1] / D.conv.concluded[1] : 0;
+  const rsP = share(relP, 0), rsC = share(relC, 1);
+  star("s-rel", "Relevant leads", RELTIP, relC, relP, fInt,
+       { value: relC - relP, text: `${fSigned(relC - relP)} leads`, note: relP ? `${sgn(relC - relP)}${Math.abs((relC / relP - 1) * 100).toFixed(1)}%` : "" }, 1);
+  star("s-qual", "Relevant share of leads", SHARETIP, rsC, rsP, fPct,
+       { value: rsC - rsP, text: fPts((rsC - rsP) * 100), note: `${fInt(relC)} of ${fInt(D.total[1])} leads` }, 1);
+  const [ndP, ndC] = D.mkt.find((g) => g.name === "Not decided yet").v, nsP = share(ndP, 0), nsC = share(ndC, 1);
+  star("s-und-m", "Undisposed (not decided yet)", NDTIP, nsC, nsP, fPct,
+       { value: nsC - nsP, text: fPts((nsC - nsP) * 100), note: `${fInt(ndC)} of ${fInt(D.total[1])} leads · lower is better` }, -1);
+
+  if (mode === "n") {
+    star("s-und", "Undisposed leads", UNDTIP, undC, undP, fInt,
+         { value: undC - undP, text: `${fSigned(undC - undP)} leads`, note: "lower is better" }, -1);
+  } else {
+    const uP = share(undP, 0), uC = share(undC, 1);
+    star("s-und", "Undisposed leads", UNDTIP, uC, uP, fPct, { value: uC - uP, text: fPts((uC - uP) * 100), note: "of all leads, lower is better" }, -1);
+  }
+  star("s-conv", "Demo arranged rate", CONVTIP, convC, convP, fPct,
+       { value: convC - convP, text: fPts((convC - convP) * 100), note: `${fInt(D.conv.won[1])} of ${fInt(D.conv.concluded[1])}` }, 1);
+
+  const cell = (v, i) => (mode === "n" ? fInt(v) : fPct(share(v, i)));
+  const chg = (p, c) => (mode === "n" ? fSigned(c - p) : fPts((share(c, 1) - share(p, 0)) * 100));
+  const head = `<thead><tr><th></th><th>${D.periods.previous}</th><th>${D.periods.current}</th><th>Change</th></tr></thead>`;
+  const totalRow = `<tr class="total"><td>Total leads</td><td>${mode === "n" ? fInt(D.total[0]) : "100%"}</td><td>${mode === "n" ? fInt(D.total[1]) : "100%"}</td>` +
+                   `<td class="c">${mode === "n" ? fSigned(D.total[1] - D.total[0]) : "—"}</td></tr>`;
+
+  const groups = (G) => G.map((g) => `<tr class="main"><td${g.tip ? ` data-tip="${g.tip}"` : ""}>${g.name}</td><td>${cell(g.v[0], 0)}</td><td>${cell(g.v[1], 1)}</td><td class="c">${chg(g.v[0], g.v[1])}</td></tr>` +
+      (g.sub || []).map(([n, p, c]) => `<tr class="sub"><td>${n}</td><td>${cell(p, 0)}</td><td>${cell(c, 1)}</td><td>${chg(p, c)}</td></tr>`).join("")).join("");
+  $("t-mkt").innerHTML = head + "<tbody>" + groups(D.mkt) + totalRow + "</tbody>";
+
+  $("t-call").innerHTML = head + "<tbody>" +
+    D.call.map((g) => `<tr class="main"><td${g.tip ? ` data-tip="${g.tip}"` : ""}>${g.name}</td><td>${cell(g.v[0], 0)}</td><td>${cell(g.v[1], 1)}</td><td class="c">${chg(g.v[0], g.v[1])}</td></tr>` +
+      (g.sub || []).map(([n, p, c]) => `<tr class="sub"><td>${n}</td><td>${cell(p, 0)}</td><td>${cell(c, 1)}</td><td>${chg(p, c)}</td></tr>`).join("")).join("") +
+    totalRow + "</tbody>";
+}
+
+async function init() {
+  let d;
+  try { d = await dash.load({ view: "home" }); }
+  catch (e) { $("state").textContent = `Couldn't load the data (${e.message}). Reload to try again.`; return; }
+  if (d.empty) { $("state").textContent = "No snapshot yet: the nightly job hasn't run."; return; }
+  D = build(d);
+  $("periods").textContent = `${D.periods.current} vs ${D.periods.previous} · as of midnight after each`;
+  for (const [cur, label, text] of D.changes) {
+    const s = document.createElement("span");
+    s.className = "chip" + (cur ? " now" : "");
+    s.textContent = label;
+    s.dataset.tip = text;
+    $("changes").append(s);
+  }
+  if (!D.changes.length) $("changes").hidden = true;
+  const yday = dash.addDays(dash.istToday(), -1);
+  if (d.as_of < yday) {
+    $("stale").hidden = false;
+    $("stale").textContent = `Last night's snapshot is missing: showing ${dash.dm(d.as_of)}. The job retries at 04:15 and 06:15 IST.`;
+  }
+  $("foot").textContent = `Snapshot as of the end of ${dash.dm(d.as_of)} · built ${new Date(d.generated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} IST`;
+  $("state").hidden = true; $("hero").hidden = false; $("cards").hidden = false;
+  render();
+}
+for (const b of document.querySelectorAll("[data-mode]")) b.addEventListener("click", () => { mode = b.dataset.mode; if (D) render(); });
+dash.tooltips();
+init();
 </script>
-</body></html>
+</body>
+</html>
