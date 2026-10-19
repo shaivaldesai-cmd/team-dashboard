@@ -241,7 +241,7 @@ function star(id, label, tip, cur, prev, fmt, change, better) {
 
 const RELTIP = "Every lead except those in Inbound, Callback requested, Call not connected, No response or Irrelevant, or moved to POS or another pipeline. A lead that had a demo arranged counts even if it later fell back.";
 const NDTIP = "Leads still undisposed with calling, so their relevance isn't known yet: Inbound, Call not connected or Callback requested, as a share of all leads that came in. As calling decides them, relevant leads go up. Calling's undisposed count is slightly higher because it also includes Quotation sent and leads that fell back after a demo was arranged, which already count as relevant here.";
-const SHARETIP = "Relevant leads ÷ all leads that came in. Leads calling has not decided yet are in the total, so this rises as calling works through them; read it next to calling's undisposed leads.";
+const SHARETIP = "Relevant leads ÷ leads that have been decided (relevant + not relevant). Leads calling hasn't decided yet, and leads moved outside payroll, are left out of both. No response counts as not relevant, so dialer changes that move leads to No response (the 21 Aug – 25 Sep attempt-limit bug, the 16 Oct warm-list retirement) move this number too.";
 const UNDTIP = "Leads still in a calling stage at the snapshot: Inbound, Call not connected, Callback requested or Quotation sent. Lower is better.";
 const CONVTIP = "Of the relevant leads calling has concluded (relevant leads minus those still in Quotation sent), the share with a demo arranged or closed. Not interested and hand-offs to a field team count as not converted. Counted per lead, not per call.";
 
@@ -250,11 +250,13 @@ function render() {
   const [relP, relC] = D.mkt[0].v;
   const [undP, undC] = D.call[0].v;
   const convP = D.conv.concluded[0] ? D.conv.won[0] / D.conv.concluded[0] : 0, convC = D.conv.concluded[1] ? D.conv.won[1] / D.conv.concluded[1] : 0;
-  const rsP = share(relP, 0), rsC = share(relC, 1);
+  // relevance among decided leads (user, 2026-10-19): relevant ÷ (relevant + not relevant)
+  const [nrP, nrC] = D.mkt[1].v, decP = relP + nrP, decC = relC + nrC;
+  const rsP = decP ? relP / decP : 0, rsC = decC ? relC / decC : 0;
   star("s-rel", "Relevant leads", RELTIP, relC, relP, fInt,
        { value: relC - relP, text: `${fSigned(relC - relP)} leads`, note: relP ? `${sgn(relC - relP)}${Math.abs((relC / relP - 1) * 100).toFixed(1)}%` : "" }, 1);
-  star("s-qual", "Relevant share of leads", SHARETIP, rsC, rsP, fPct,
-       { value: rsC - rsP, text: fPts((rsC - rsP) * 100), note: `${fInt(relC)} of ${fInt(D.total[1])} leads` }, 1);
+  star("s-qual", "Relevant share of decided leads", SHARETIP, rsC, rsP, fPct,
+       { value: rsC - rsP, text: fPts((rsC - rsP) * 100), note: `${fInt(relC)} of ${fInt(decC)} decided leads` }, 1);
   const [ndP, ndC] = D.mkt.find((g) => g.name === "Not decided yet").v, nsP = share(ndP, 0), nsC = share(ndC, 1);
   star("s-und-m", "Undisposed (not decided yet)", NDTIP, nsC, nsP, fPct,
        { value: nsC - nsP, text: fPts((nsC - nsP) * 100), note: `${fInt(ndC)} of ${fInt(D.total[1])} leads · lower is better` }, -1);
