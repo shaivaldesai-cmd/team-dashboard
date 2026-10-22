@@ -1,4 +1,5 @@
-// Shared by index.html (Home), calling.html and diagnostics.html (2026-10-18).
+// Shared by index.html (Home), calling.html, diagnostics.html (2026-10-18) and
+// settings.html (2026-10-22, the only page that writes: dash.save).
 // Data: the team-dashboard edge function (JSON; Supabase can't serve HTML).
 // Sign in with dashboard.user / dashboard.pass, or open a page once with
 // #key=<dashboard.secret> (the fragment never reaches a server; it is kept in
@@ -20,12 +21,13 @@
 
   class AuthError extends Error {}
 
-  async function call(params) {
+  async function call(params, body) {
     const c = creds();
     if (!c) throw new AuthError("signed out");
     const q = new URLSearchParams(params);
     if (c.key) q.set("key", c.key); else { q.set("user", c.user || ""); q.set("pass", c.pass || ""); }
-    const r = await fetch(`${API}?${q}`);
+    const r = await fetch(`${API}?${q}`, body === undefined ? undefined
+      : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (r.status === 401) { try { localStorage.removeItem(LS); } catch { /* ignore */ } throw new AuthError("unauthorized"); }
     const d = await r.json().catch(() => null);
     if (!d || !d.ok) throw new Error((d && d.error) || `HTTP ${r.status}`);
@@ -59,10 +61,10 @@
     });
   }
 
-  async function load(params) {
+  async function load(params, body) {
     let failed = false;
     for (;;) {
-      try { return await call(params); }
+      try { return await call(params, body); }
       catch (e) {
         if (!(e instanceof AuthError)) throw e;
         await askLogin(failed);
@@ -103,5 +105,7 @@
   const range = (a, b) => (a === b ? dm(a) : a.slice(0, 7) === b.slice(0, 7) ? `${Number(a.slice(8, 10))}–${dm(b)}` : `${dm(a)} – ${dm(b)}`);
   const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-  window.dash = { load, tooltips, istToday, addDays, dm, range, esc };
+  const save = (params, body) => load(params, body);
+
+  window.dash = { load, save, tooltips, istToday, addDays, dm, range, esc };
 })();

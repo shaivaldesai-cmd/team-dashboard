@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Payroll Sales · Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --ink: #0b0d12; --ink-2: #3d4350; --ink-3: #7a8190;
+    --line: #e7e9ee; --line-2: #f2f3f6; --panel: #fafbfc;
+    --accent: #2457e6; --accent-2: #edf2ff;
+    --good: #12805c; --bad: #c2352b; --bad-2: #fcefee; --warn: #9a6a00; --warn-2: #fff7e6;
+    --radius: 14px;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #fff; color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .top-in { max-width: 1200px; margin: 0 auto; padding: 0 28px; height: 60px; display: flex; align-items: center; gap: 28px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; }
+  .brand i { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: inline-block; }
+  .brand span { color: var(--ink-3); font-weight: 500; }
+  nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  nav a { font-size: 13.5px; color: var(--ink-3); text-decoration: none; padding: 7px 11px; border-radius: 8px; white-space: nowrap; }
+  nav a:hover { color: var(--ink); }
+  nav a.on { color: var(--ink); background: var(--line-2); font-weight: 500; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 28px 80px; display: grid; gap: 22px; }
+  .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; }
+  h1 { margin: 0; font-size: 34px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em; display: flex; align-items: center; gap: 10px; }
+  .tabs { display: inline-flex; gap: 2px; border-bottom: 1px solid var(--line); }
+  .tabs button { all: unset; cursor: pointer; font-size: 14px; padding: 8px 14px; color: var(--ink-3); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs button[aria-selected="true"] { color: var(--ink); font-weight: 500; border-bottom-color: var(--ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tabs small { font-size: 11.5px; color: var(--ink-3); margin-left: 4px; }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); position: sticky; top: 68px; z-index: 10; }
+  .bar label, .bar .lbl { font-size: 13.5px; font-weight: 500; }
+  select { font: inherit; font-size: 14px; padding: 6px 30px 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink);
+           appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+           background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; min-width: 170px; }
+  select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .grp { display: flex; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 3px; background: #fff; flex-wrap: wrap; }
+  .seg button { all: unset; cursor: pointer; font-size: 13px; padding: 5px 12px; border-radius: 6px; color: var(--ink-3); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .range { font-size: 13.5px; color: var(--ink-2); }
+  .clear { all: unset; cursor: pointer; font-size: 13px; color: var(--accent); }
+
+  .block { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: grid; gap: 18px; }
+  .block-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .block-h h2 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .who { font-size: 13.5px; color: var(--ink-3); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .tile { padding: 16px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line-2); display: grid; gap: 4px; align-content: start; }
+  .tile-l { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--ink-2); font-weight: 500; }
+  .v { font-size: 34px; line-height: 1.1; font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
+  .sub { font-size: 13px; color: var(--ink-3); }
+  .sub b { color: var(--ink-2); font-weight: 500; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 10px 10px; border-bottom: 1px solid var(--line-2); text-align: right; white-space: nowrap; vertical-align: top; }
+  th:first-child, td:first-child { text-align: left; white-space: normal; padding-left: 0; }
+  th:last-child, td:last-child { padding-right: 0; }
+  thead th { font-size: 12.5px; font-weight: 500; color: var(--ink-3); border-bottom: 1px solid var(--line); vertical-align: bottom; }
+  thead th.sort { cursor: pointer; user-select: none; } thead th.sort:hover { color: var(--ink); }
+  thead th[aria-sort="ascending"]::after { content: " ↑"; } thead th[aria-sort="descending"]::after { content: " ↓"; }
+  tr.click { cursor: pointer; } tr.click:hover td { background: var(--panel); }
+  tr.total td { font-weight: 600; border-top: 1px solid var(--line); border-bottom: 0; }
+  .chk { font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+  .basis { font-size: 11.5px; font-weight: 500; color: var(--accent); background: var(--accent-2); border-radius: 999px; padding: 1px 8px; margin-left: 6px; white-space: nowrap; cursor: help; }
+  .basis.now { color: var(--ink-2); background: var(--line-2); }
+  .owner { display: block; font-size: 12.5px; color: var(--ink-3); font-weight: 400; margin-top: 2px; }
+  .pill { font-size: 12.5px; font-weight: 500; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+  .pill.ok { color: var(--good); background: #e8f5ef; } .pill.bad { color: var(--bad); background: var(--bad-2); } .pill.warn { color: var(--warn); background: var(--warn-2); }
+  .view { all: unset; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--accent); }
+  .view:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .view:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  tr.deals td { background: var(--panel); padding: 0 0 12px; }
+  .deals-in { padding: 4px 14px 2px; }
+  .deals-in table { font-size: 13px; }
+  .deals-in th, .deals-in td { padding: 7px 8px; }
+  .deals-in td:first-child, .deals-in th:first-child { padding-left: 0; }
+  .more { font-size: 12.5px; color: var(--ink-3); margin: 6px 0 0; }
+  .hot { color: var(--bad); font-weight: 600; }
+  .zero { color: #b8bdc6; }
+  .scroll { overflow-x: auto; }
+  #t-reps th { white-space: normal; min-width: 64px; line-height: 1.25; }
+  #t-reps td:first-child, #t-reps th:first-child { white-space: nowrap; min-width: 70px; }
+  #t-reps td, #t-reps th { padding-left: 6px; padding-right: 6px; }
+  .note { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+  footer { font-size: 12.5px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 16px; }
+
+  .i { width: 17px; height: 17px; border-radius: 50%; border: 1px solid #c9ced6; color: var(--ink-3); font: 600 10.5px/15px var(--sans);
+       display: inline-grid; place-items: center; cursor: help; background: #fff; padding: 0; flex: none; }
+  .i:hover, .i:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+  #tip { position: fixed; z-index: 50; pointer-events: none; max-width: 320px; background: var(--ink); color: #fff; font-size: 12.5px; line-height: 1.45;
+         padding: 9px 11px; border-radius: 9px; box-shadow: 0 8px 24px rgba(16,24,40,.18); opacity: 0; transition: opacity .12s; white-space: pre-line; }
+  #tip.show { opacity: 1; }
+  [hidden] { display: none !important; }
+
+  #dash-login { position: fixed; inset: 0; z-index: 60; display: none; place-items: center; background: rgba(255,255,255,.96); }
+  #dash-login form { display: grid; gap: 10px; width: min(300px, calc(100vw - 32px)); padding: 24px; border: 1px solid var(--line);
+                     border-radius: 14px; background: #fff; box-shadow: 0 12px 32px rgba(16,24,40,.08); }
+  #dash-login input { font: inherit; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; }
+  #dash-login button { font: inherit; padding: 9px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 500; cursor: pointer; }
+  #dash-login .err { margin: 0; color: var(--bad); font-size: 13px; }
+  .err-box { border: 1px solid #f3c6c2; background: #fff6f5; color: var(--bad); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+  .loading { opacity: .45; transition: opacity .15s; }
+  @media (max-width: 560px) { .top-in, main { padding-left: 16px; padding-right: 16px; } .bar { position: static; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* Settings page (2026-10-22) */
+  .tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+  .tools input[type=search] { font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; min-width: 220px; }
+  .tools input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #t-owners td.c, #t-owners th.c { text-align: center; width: 72px; padding-left: 0; }
+  #t-owners td:first-child, #t-owners th:first-child { padding-left: 0; }
+  #t-owners td:nth-child(2), #t-owners th:nth-child(2) { text-align: left; white-space: normal; }
+  #t-owners input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+  #t-owners tr.dirty td { background: var(--accent-2); }
+  #t-owners tr.off td:not(.c) { color: var(--ink-3); }
+  #t-owners .nm { font-weight: 500; color: var(--ink); }
+  .warn-box { border: 1px solid #f1dca6; background: var(--warn-2); color: var(--warn); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; }
+  .savebar { position: sticky; bottom: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 18px;
+             border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.96); backdrop-filter: blur(8px); box-shadow: 0 -6px 18px rgba(16,24,40,.05); }
+  .savebar label { font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .savebar input { font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; width: 180px; }
+  .savebar button { font: inherit; font-size: 14px; padding: 7px 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 500; cursor: pointer; }
+  .savebar button:disabled { background: #c9ced6; cursor: default; }
+  .savebar .pending { font-size: 13.5px; color: var(--ink-2); }
+  .savebar .ok { color: var(--good); font-size: 13.5px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><i></i>Petpooja <span>Payroll sales</span></div>
+    <nav aria-label="Pages">
+      <a href="index.html">Home</a>
+      <a href="calling.html">Calling</a>
+      <a href="diagnostics.html">Diagnostics</a>
+      <a href="settings.html" class="on">Settings</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="head">
+    <h1>Settings <button class="i" type="button" aria-label="About this page" data-tip="Who the dialer calls for. Changes apply within 10 minutes and are logged with the name you type.">i</button></h1>
+  </div>
+
+  <div class="err-box" id="err" hidden></div>
+  <div id="warns" style="display:grid;gap:10px"></div>
+
+  <section class="block" id="blk">
+    <div class="block-h"><h2>Lead owners on the dialer</h2><span class="who" id="who"></span></div>
+    <p class="note">Only leads owned by a ticked person go on the dialer. An unticked person's leads stay off it: they are never dialed, and calls to them are recorded only, with no stage moves, no attempt counting and no AI follow-ups. Leads with no owner are treated as unticked. Missed-call WhatsApps still go out for everyone.</p>
+    <div class="tools">
+      <input type="search" id="q" placeholder="Search a name" aria-label="Search a name">
+      <div class="seg" id="seg">
+        <button type="button" data-f="active" aria-pressed="true">With leads, new or unticked</button>
+        <button type="button" data-f="all" aria-pressed="false">Everyone</button>
+      </div>
+    </div>
+    <div class="scroll"><table id="t-owners"></table></div>
+  </section>
+
+  <div class="savebar">
+    <label for="by">Your name</label><input id="by" autocomplete="name" placeholder="For the change log">
+    <button type="button" id="save" disabled>Save</button>
+    <span class="pending" id="pending">No changes</span>
+    <span class="ok" id="msg" role="status"></span>
+  </div>
+
+  <footer id="foot"></footer>
+</main>
+
+<div id="tip" role="tooltip"></div>
+
+<script src="api.js"></script>
+<script>
+// Live data: team-dashboard?view=settings (GET) and a POST of the changes
+// (2026-10-22). The tick is the dialer owner allow-list.
+const $ = (id) => document.getElementById(id);
+const fInt = (x) => Math.round(x).toLocaleString("en-IN");
+const istTime = (iso) => new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const NAME_LS = "petpooja_dash_name";
+const st = { filter: "active", q: "" };
+let D = null, cur = new Map();
+
+try { $("by").value = localStorage.getItem(NAME_LS) || ""; } catch { /* private mode */ }
+
+async function load() {
+  $("blk").classList.add("loading");
+  try {
+    D = await dash.load({ view: "settings" });
+    cur = new Map(D.owners.map((o) => [o.id, o.allowed]));
+    $("err").hidden = true;
+    render();
+  } catch (e) {
+    $("err").textContent = `Couldn't load the owner list: ${e.message}`; $("err").hidden = false;
+  } finally { $("blk").classList.remove("loading"); }
+}
+
+const dirty = (o) => cur.get(o.id) !== o.allowed;
+const toSave = () => D.owners.filter((o) => dirty(o) || o.new);
+
+function render() {
+  if (!D) return;
+  const def = D.owners.find((o) => o.id === D.default_inbound_owner);
+  const fresh = D.owners.filter((o) => o.new);
+  const w = [];
+  if (D.default_inbound_owner && (!def || !cur.get(def.id))) {
+    w.push(`<div class="err-box"><b>${dash.esc(def ? def.name : "The default inbound owner")}</b> is not ticked. New deals for unknown inbound callers get this owner, so none of them will be dialed. Tick them, or change the default owner.</div>`);
+  }
+  if (fresh.length) {
+    w.push(`<div class="warn-box"><b>${fresh.length} new ${fresh.length === 1 ? "owner needs" : "owners need"} a decision</b> (${fresh.map((o) => dash.esc(o.name || `#${o.id}`)).join(", ")}). New CRM owners start unticked, so their leads stay off the dialer. Tick or leave them, then Save.</div>`);
+  }
+  $("warns").innerHTML = w.join("");
+
+  const ticked = D.owners.filter((o) => cur.get(o.id)).length;
+  $("who").textContent = `${ticked} of ${D.owners.length} ticked`;
+  document.querySelectorAll("#seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === st.filter)));
+
+  const q = st.q.toLowerCase();
+  const rows = D.owners.filter((o) =>
+    (!q || (o.name || "").toLowerCase().includes(q)) &&
+    (st.filter === "all" || dirty(o) || o.new || !o.allowed || o.open > 0 || o.on_dialer > 0));
+  $("t-owners").innerHTML =
+    `<thead><tr><th class="c">On dialer</th><th>Owner</th>` +
+    `<th>Open leads <button class="i" type="button" aria-label="Definition" data-tip="Payroll leads they own in Inbound, Call not connected or Callback requested right now.">i</button></th>` +
+    `<th>On the dialer now</th><th>Last changed</th></tr></thead><tbody>` +
+    (rows.map((o) => {
+      const on = cur.get(o.id), tags = [];
+      if (o.new) tags.push(`<span class="pill warn">New: decide</span>`);
+      if (o.id === D.default_inbound_owner) tags.push(`<span class="pill ${on ? "ok" : "bad"}" data-tip="New deals for unknown inbound callers get this owner.">Default inbound owner</span>`);
+      if (o.status && o.status !== "active") tags.push(`<span class="pill bad">${dash.esc(o.status)} in CRM</span>`);
+      const meta = [o.team, `#${o.id}`].filter(Boolean).map(dash.esc).join(" · ");
+      const changed = o.new ? "–" : o.by && o.by.startsWith("seed") ? "Set at launch" : `${dash.esc(o.by || "")}${o.at ? `, ${istTime(o.at)}` : ""}`;
+      return `<tr class="${dirty(o) ? "dirty" : ""} ${on ? "" : "off"}">` +
+        `<td class="c"><input type="checkbox" data-id="${o.id}" ${on ? "checked" : ""} aria-label="${dash.esc(o.name || o.id)} on the dialer"></td>` +
+        `<td><span class="nm">${dash.esc(o.name || "Unknown")}</span> ${tags.join(" ")}<span class="owner">${meta}</span></td>` +
+        `<td>${o.open ? fInt(o.open) : `<span class="zero">0</span>`}</td>` +
+        `<td>${o.on_dialer ? fInt(o.on_dialer) : `<span class="zero">0</span>`}</td>` +
+        `<td>${changed}</td></tr>`;
+    }).join("") || `<tr><td colspan="5">Nobody matches.</td></tr>`) + `</tbody>`;
+
+  const n = D.owners.filter(dirty).length, nf = fresh.filter((o) => !dirty(o)).length;
+  $("pending").textContent = n || nf
+    ? [n ? `${n} ${n === 1 ? "change" : "changes"}` : "", nf ? `${nf} new ${nf === 1 ? "owner" : "owners"} saved as shown` : ""].filter(Boolean).join("; ")
+    : "No changes";
+  $("save").disabled = !(n || nf);
+  $("foot").textContent = D.last_change
+    ? `Last changed by ${D.last_change.by}, ${istTime(D.last_change.at)}.`
+    : "No changes since launch: everyone except the three regional reps was ticked on 22 Oct.";
+}
+
+$("t-owners").addEventListener("change", (e) => {
+  const box = e.target.closest("input[type=checkbox]"); if (!box) return;
+  cur.set(Number(box.dataset.id), box.checked); $("msg").textContent = ""; render();
+});
+$("q").addEventListener("input", (e) => { st.q = e.target.value.trim(); render(); });
+$("seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; st.filter = b.dataset.f; render(); });
+
+$("save").addEventListener("click", async () => {
+  const by = $("by").value.trim();
+  if (by.length < 2) { $("by").focus(); $("msg").textContent = ""; $("err").textContent = "Type your name first: it goes in the change log."; $("err").hidden = false; return; }
+  try { localStorage.setItem(NAME_LS, by); } catch { /* ignore */ }
+  const changes = toSave().map((o) => ({ owner_id: o.id, allowed: cur.get(o.id) }));
+  const ticks = changes.filter((c) => c.allowed && !D.owners.find((o) => o.id === c.owner_id).allowed).length;
+  const unticks = changes.filter((c) => !c.allowed && D.owners.find((o) => o.id === c.owner_id).allowed).length;
+  $("save").disabled = true; $("err").hidden = true;
+  try {
+    const r = await dash.save({ view: "settings" }, { by, changes });
+    const parts = [`Saved ${r.changed} ${r.changed === 1 ? "change" : "changes"}.`];
+    if (unticks) parts.push("Unticked owners' leads come off the dialer within 10 minutes.");
+    // reconcile pushes Inbound leads of any age and CNC / Callback leads up to 30 days old
+    if (ticks) parts.push("Newly ticked owners' leads go on the dialer at the next sync (within 10 minutes): Inbound leads of any age, Call not connected and Callback requested from the last 30 days.");
+    await load();
+    $("msg").textContent = parts.join(" ");
+  } catch (e) {
+    $("err").textContent = `Couldn't save: ${e.message}`; $("err").hidden = false; $("save").disabled = false;
+  }
+});
+
+dash.tooltips();
+load();
+</script>
+</body>
+</html>

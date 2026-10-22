@@ -117,6 +117,7 @@
       <a href="index.html">Home</a>
       <a href="calling.html" class="on">Calling</a>
       <a href="diagnostics.html">Diagnostics</a>
+      <a href="settings.html">Settings</a>
     </nav>
   </div>
 </header>
@@ -128,11 +129,11 @@
   <section class="block" id="workload">
     <div class="block-h">
       <h2>Undisposed workload</h2>
-      <span class="basis now" id="w-basis" data-tip="Right now: every payroll lead still with calling, whatever date it came in (the CRM stage mirror, a few minutes behind the CRM). Regional reps' leads are left out. Ignores the date picker.">Right now</span>
+      <span class="basis now" id="w-basis" data-tip="Right now: every payroll lead still with calling, whatever date it came in (the CRM stage mirror, a few minutes behind the CRM). Leads of owners not ticked for the dialer (Settings page) are left out. Ignores the date picker.">Right now</span>
     </div>
     <div class="tiles">
       <div class="tile lead">
-        <div class="tile-l">Open leads <button class="i" type="button" aria-label="Definition" data-tip="Payroll leads in Inbound, Call not connected, Callback requested or Quotation sent, created on any date. Regional reps' leads are left out.">i</button></div>
+        <div class="tile-l">Open leads <button class="i" type="button" aria-label="Definition" data-tip="Payroll leads in Inbound, Call not connected, Callback requested or Quotation sent, created on any date. Leads of owners not ticked for the dialer (Settings page) are left out.">i</button></div>
         <div class="tile-v"><span class="v" id="w-open"></span></div>
         <div class="sub" id="w-open-s"></div>
       </div>
@@ -308,7 +309,7 @@ function renderSpeed() {
   const s = S.speed, t = T();
   const le1 = ratio(s.le1, s.leads), le10 = ratio(s.le10, s.leads), ooh = ratio(s.ooh_on_time, s.ooh_due);
   $("speed-tiles").innerHTML =
-    tile({ lead: true, label: "Called within 1 minute", tip: "Leads arriving 10:30–19:00, Monday to Saturday, whose first outbound call (any channel) came within 1 minute of arrival. Leads created straight into a demo stage, referral-campaign leads and regional reps' leads are left out.", value: fPct(le1),
+    tile({ lead: true, label: "Called within 1 minute", tip: "Leads arriving 10:30–19:00, Monday to Saturday, whose first outbound call (any channel) came within 1 minute of arrival. Leads created straight into a demo stage, referral-campaign leads and leads of owners not ticked for the dialer (Settings page) are left out.", value: fPct(le1),
            target: fPct(t.le1), gapText: short((t.le1 - le1) * 100, (g) => g.toFixed(1) + " pts"), sub: `of ${fInt(s.leads)} in-hours leads` }) +
     tile({ label: "Called within 10 minutes", tip: "Same leads, first call within 10 minutes.", value: fPct(le10), target: fPct(t.le10), gapText: short((t.le10 - le10) * 100, (g) => g.toFixed(1) + " pts") }) +
     tile({ label: "Never called", tip: "In-hours leads with no outbound call by the end of the selected period.", value: fInt(s.not_called), target: "0",

@@ -127,6 +127,7 @@
       <a href="index.html">Home</a>
       <a href="calling.html">Calling</a>
       <a href="diagnostics.html" class="on">Diagnostics</a>
+      <a href="settings.html">Settings</a>
     </nav>
   </div>
 </header>
@@ -356,9 +357,10 @@ function renderSystem() {
   if (J.crm_history_until && Date.now() - Date.parse(J.crm_history_until) > 30 * 3600e3) late.push(`CRM history last loaded ${istTime(J.crm_history_until)}`);
   for (const [name, at, msg] of J.failed_24h || []) late.push(`${name} failed at ${istTime(at)}${msg ? ` (${msg})` : ""}`);
   const SYS = [
-    { name: "Leads never pushed to the dialer", basis: "now", n: K.never_pushed, tip: "Payroll leads from the last 30 days, in a dialable stage, never added to a dialer list and never called. Leads created straight into a demo stage, referral-campaign leads and regional reps' leads are left out." },
+    { name: "Leads never pushed to the dialer", basis: "now", n: K.never_pushed, tip: "Payroll leads from the last 30 days, in a dialable stage, never added to a dialer list and never called. Leads created straight into a demo stage, referral-campaign leads and leads of owners not ticked for the dialer (Settings page) are left out." },
     { name: "Leads past their attempt limit", basis: "now", n: K.past_limit_cnc + K.past_limit_cb, tip: `On the dialer with the attempt limit used up: ${fInt(K.past_limit_cnc)} in Call not connected (3+ missed attempts this round), ${fInt(K.past_limit_cb)} in Callback requested (2+ missed callbacks). The dialer should have moved them to No response.` },
-    { name: "Dialer and CRM out of step", basis: "now", n: K.off_dialer + K.concluded_on_dialer, tip: `In a dialable stage but on no dialer list (${fInt(K.off_dialer)}: nothing will call them), or in a closed stage but still on a dialer list (${fInt(K.concluded_on_dialer)}). Regional reps' leads are left out.` },
+    { name: "Dialer and CRM out of step", basis: "now", n: K.off_dialer + K.concluded_on_dialer, tip: `In a dialable stage but on no dialer list (${fInt(K.off_dialer)}: nothing will call them), or in a closed stage but still on a dialer list (${fInt(K.concluded_on_dialer)}). Leads of owners not ticked for the dialer (Settings page) are left out.` },
+    { name: "Lead owners waiting for a dialer decision", basis: "now", n: K.owners_undecided ? K.owners_undecided.owners : null, tip: `New CRM owners start unticked, so their leads stay off the dialer until someone ticks them on the Settings page. Now: ${fInt(K.owners_undecided ? K.owners_undecided.leads : 0)} open leads wait on these owners.` },
     { name: "CRM stage mirror out of step", basis: "now", n: K.stage_drift ? K.stage_drift.drift : null, tip: K.stage_drift ? `Last drift check ${istTime(K.stage_drift.at)}: ${fInt(K.stage_drift.drift)} of ${fInt(K.stage_drift.checked)} leads had a different stage in our mirror than in the CRM.` : "The drift check hasn't run yet." },
     { name: "Dispositions not reaching the CRM within 10 minutes", basis: "7d", w: wk("disp_missing"), tip: "A dialer disposition (Not interested, Irrelevant, Callback) with no matching stage move in the CRM's own log within 10 minutes. A lead already in that stage (a repeat Callback) passes." },
     { name: "Calls to leads already concluded", basis: "7d", w: wk("calls_to_concluded"), tip: "Outbound calls to leads that were already in Not interested, Irrelevant or No response at the time of the call: wasted dials." },
