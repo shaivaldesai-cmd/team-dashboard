@@ -75,7 +75,7 @@
   tr.dim td { color: #b3b8c2; }
   .tag { font-size: 11.5px; font-weight: 500; border-radius: 6px; padding: 1px 7px; margin-left: 6px; white-space: nowrap; }
   .tag.diag { color: var(--warn); background: var(--warn-2); }
-  .tag.lunch { color: var(--ink-3); background: var(--line-2); }
+  .tag.lunch, .tag.team { color: var(--ink-3); background: var(--line-2); }
   .tag.aged { color: var(--bad); background: var(--bad-2); }
   .good { color: var(--good); } .bad { color: var(--bad); }
   .scroll { overflow-x: auto; }
@@ -330,7 +330,7 @@ function sortable(tableId, cols, rows, minKey, minVal, defaultSort) {
     return (typeof x === "string" ? x.localeCompare(y) : x - y) * st.dir;
   });
   const head = `<thead><tr>${cols.map((c) => `<th class="sort" data-k="${c.k}"${st.k === c.k ? ` aria-sort="${st.dir > 0 ? "ascending" : "descending"}"` : ""}>${c.label}</th>`).join("")}</tr></thead>`;
-  const body = sorted.map((r) => `<tr class="${r[minKey] < minVal ? "dim" : ""}">${cols.map((c) => `<td class="${r[minKey] < minVal ? "" : (c.cls ? c.cls(r) : "")}">${c.fmt ? c.fmt(r[c.k]) : dash.esc(r[c.k])}</td>`).join("")}</tr>`).join("");
+  const body = sorted.map((r) => `<tr class="${r[minKey] < minVal ? "dim" : ""}">${cols.map((c) => `<td class="${r[minKey] < minVal ? "" : (c.cls ? c.cls(r) : "")}">${c.fmt ? c.fmt(r[c.k], r) : dash.esc(r[c.k])}</td>`).join("")}</tr>`).join("");
   const t = $(tableId);
   t.innerHTML = head + `<tbody>${body || `<tr><td colspan="${cols.length}">Nothing in this period.</td></tr>`}</tbody>`;
   t.querySelectorAll("th.sort").forEach((th) => th.addEventListener("click", () => {
@@ -342,16 +342,36 @@ function sortable(tableId, cols, rows, minKey, minVal, defaultSort) {
 const vsT = (g) => (g >= 0 ? "+" : "−") + Math.abs(g).toFixed(1) + " pts";
 
 // ---------------- 3. conversion ----------------
+// 2026-10-23 (user ask): expected to happen = demos arranged × the rep's usual
+// show rate (show_hist: the 30 days before the range), so reps compare on
+// demos likely to happen, not just demos arranged. Under 15 demos due (the show
+// table's "too few to judge" line) the team's rate stands in.
+const EXP_TIP = "Demos arranged on the selected days × the rep's usual show rate: the share of their demos that happened over the 30 days before the selected days (demos due then, credited to the telecaller who arranged them). Reps with fewer than 15 demos due in those 30 days get the team's rate (marked \"team\"). Demos arranged are counted by disposition date, so this is a forecast, not a count of demos that happened. Covers the reps in the table; demos arranged by the demo team or managers are left out.";
 function renderConv() {
   const C = S.conversion, tgt = T().conv;
-  const rows = C.reps.map(([rep, concluded, demos]) => ({ rep, concluded, demos, ni: concluded - demos, rate: ratio(demos, concluded), gap: (ratio(demos, concluded) - tgt) * 100 }));
+  const SH = S.show_hist || { team: {}, reps: [] };
+  const teamShow = SH.team.due ? SH.team.shown / SH.team.due : null;
+  const own = new Map(SH.reps.filter(([, due]) => due >= 15).map(([rep, due, shown]) => [rep, shown / due]));
+  const rows = C.reps.map(([rep, concluded, demos]) => {
+    const usual = own.get(rep) ?? teamShow;
+    return { rep, concluded, demos, ni: concluded - demos, rate: ratio(demos, concluded), gap: (ratio(demos, concluded) - tgt) * 100,
+             usual, team: !own.has(rep), exp: usual == null ? null : demos * usual };
+  });
+  const teamTag = `<span class="tag team" data-tip="Fewer than 15 demos due in the 30 days before the selected days, too few to judge: the team's show rate is used.">team</span>`;
   const tc = C.team.concluded, td = C.team.won, rate = ratio(td, tc);
+  // the total sums the unrounded values: rounding each rep first would skew a
+  // one-day range, where most reps arrange one or two demos
+  const expLine = teamShow == null ? "" : `<br>≈ <b>${fInt(rows.reduce((s, r) => s + r.exp, 0))}</b> of the <b>${fInt(rows.reduce((s, r) => s + r.demos, 0))}</b> arranged by reps in the table expected to happen, at each rep's usual show rate` +
+    ` <button class="i" type="button" aria-label="How it is estimated" data-tip="${dash.esc(EXP_TIP)}">i</button>`;
   const others = C.others && C.others.concluded ? ` · ${fInt(C.others.concluded)} of them by the demo team or managers (not in the table)` : "";
   $("conv-tiles").innerHTML = tile({ lead: true, label: "Concluded leads with a demo arranged", tip: "Of the relevant leads concluded on the selected days, the share with a demo arranged or closed. Not interested and hand-offs to a field team count as not converted. Irrelevant, No response and leads moved outside payroll are left out; Quotation sent is still open, so it waits. A demo counts when it is arranged, whether or not it later happens. Credit: the arranger for demos; the person who moved the lead, or the agent of the last answered call for the dialer's Not interested disposition.",
     value: tc ? fPct(rate) : "–", target: fPct(tgt) + PH, gapText: tc ? short((tgt - rate) * 100, (g) => g.toFixed(1) + " pts") : "",
-    sub: `<b>${fInt(td)}</b> demos arranged of <b>${fInt(tc)}</b> leads concluded · ${fInt(tc - td)} not converted${others}` });
+    sub: `<b>${fInt(td)}</b> demos arranged of <b>${fInt(tc)}</b> leads concluded · ${fInt(tc - td)} not converted${others}${expLine}` });
   sortable("t-conv", [
     { k: "rep", label: "Rep" }, { k: "concluded", label: "Concluded", fmt: fInt }, { k: "demos", label: "Demos arranged", fmt: fInt },
+    { k: "usual", label: `<span data-tip="The rep's show rate over the 30 days before the selected days: demos due then that happened, credited to the telecaller who arranged them. Marked team: fewer than 15 demos due, so the team's rate is used.">Usual show rate</span>`,
+      fmt: (v, r) => (v == null ? "–" : fPct(v) + (r.team ? teamTag : "")) },
+    { k: "exp", label: `<span data-tip="${dash.esc(EXP_TIP)}">Expected to happen</span>`, fmt: (v) => (v == null ? "–" : fInt(v)) },
     { k: "ni", label: "Not converted", fmt: fInt }, { k: "rate", label: "Demo arranged rate", fmt: fPct, cls: (r) => (r.rate >= tgt ? "good" : "bad") },
     { k: "gap", label: "vs target", fmt: vsT, cls: (r) => (r.gap >= 0 ? "good" : "bad") },
   ], rows, "concluded", 20, { k: "rate", dir: 1 });
