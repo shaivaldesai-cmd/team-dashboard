@@ -223,7 +223,7 @@ function render() {
     w.push(`<div class="err-box"><b>${dash.esc(def ? def.name : "The default inbound owner")}</b> is not ticked. New deals for unknown inbound callers get this owner, so none of them will be dialed. Tick them, or change the default owner.</div>`);
   }
   if (fresh.length) {
-    w.push(`<div class="warn-box"><b>${fresh.length} new ${fresh.length === 1 ? "owner needs" : "owners need"} a decision</b> (${fresh.map((o) => dash.esc(o.name || `#${o.id}`)).join(", ")}). New CRM owners start unticked, so their leads stay off the dialer. Tick or leave them, then Save.</div>`);
+    w.push(`<div class="warn-box"><b>${fresh.length} new ${fresh.length === 1 ? "owner needs" : "owners need"} a decision</b> (${fresh.map((o) => dash.esc(o.name || `#${o.id}`)).join(", ")}). New CRM owners start ticked, so their leads go on the dialer. Untick or leave them, then Save.</div>`);
   }
   $("warns").innerHTML = w.join("");
 
